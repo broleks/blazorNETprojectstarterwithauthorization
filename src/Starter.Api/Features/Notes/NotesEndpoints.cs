@@ -31,26 +31,28 @@ internal static class NotesEndpoints
         return api;
     }
 
-    internal sealed record ListNotesQuery(
-        bool Archived = false,
-        [property: Range(1, 100_000)] int Page = 1,
-        [property: Range(1, NoteLimits.MaxPageSize)] int PageSize = NoteLimits.DefaultPageSize);
-
+    // Query parameters are validated by the built-in minimal API validation (AddValidation in Program.cs),
+    // so a client cannot ask for an unbounded page.
     private static async Task<Ok<PagedResponse<NoteSummary>>> ListNotes(
-        [AsParameters] ListNotesQuery query, ClaimsPrincipal user, AppDbContext db, CancellationToken cancellationToken)
+        ClaimsPrincipal user,
+        AppDbContext db,
+        CancellationToken cancellationToken,
+        bool archived = false,
+        [Range(1, 100_000)] int page = 1,
+        [Range(1, NoteLimits.MaxPageSize)] int pageSize = NoteLimits.DefaultPageSize)
     {
         var ownerId = user.GetUserId();
-        var notes = db.Notes.AsNoTracking().Where(n => n.OwnerId == ownerId && n.IsArchived == query.Archived);
+        var notes = db.Notes.AsNoTracking().Where(n => n.OwnerId == ownerId && n.IsArchived == archived);
 
         var total = await notes.CountAsync(cancellationToken);
         var items = await notes
             .OrderByDescending(n => n.UpdatedAt)
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(ToSummary)
             .ToListAsync(cancellationToken);
 
-        return TypedResults.Ok(new PagedResponse<NoteSummary>(items, query.Page, query.PageSize, total));
+        return TypedResults.Ok(new PagedResponse<NoteSummary>(items, page, pageSize, total));
     }
 
     private static async Task<Results<Ok<NoteDetails>, NotFound>> GetNote(

@@ -6,4 +6,7 @@
     <Project Path="src/Starter.Ui/Starter.Ui.csproj" />
     <Project Path="src/Starter.Web/Starter.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Starter.Api.Tests/Starter.Api.Tests.csproj" />
+  </Folder>
 </Solution>
