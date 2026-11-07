@@ -86,6 +86,20 @@ services:
     environment:
       MP_MAX_MESSAGES: 2000
 
+  # Does nothing except wait for the database setup and Mailpit, so that `docker compose up -d --wait`
+  # returns only when the infrastructure is ready (variant 2).
+  infrastructure-ready:
+    image: mcr.microsoft.com/dotnet/runtime-deps:10.0
+    user: app
+    init: true
+    command: ["sleep", "infinity"]
+    depends_on:
+      db-setup:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
+    restart: unless-stopped
+
   # ------------------------------------------------------------------------------------------------
   # Profile "app": the three applications.
   # ------------------------------------------------------------------------------------------------

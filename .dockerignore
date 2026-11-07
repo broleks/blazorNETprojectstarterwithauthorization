@@ -10,4 +10,5 @@
 .env
 .certs/
 tests/
+**/Dockerfile
 docs/

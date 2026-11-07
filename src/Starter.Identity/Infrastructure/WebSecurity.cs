@@ -53,8 +53,14 @@ internal static class WebSecurity
                     context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
                 }
 
-                context.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
-                await context.HttpContext.Response.WriteAsync("Too many attempts. Wait a minute and try again.", cancellationToken);
+                if (context.HttpContext.Request.Path.StartsWithSegments("/connect/token"))
+                {
+                    // Machine-to-machine endpoint: an OAuth-style JSON error.
+                    await context.HttpContext.Response.WriteAsJsonAsync(
+                        new { error = "temporarily_unavailable", error_description = "Too many requests." }, cancellationToken);
+                }
+
+                // Pages: the empty 429 response is turned into the friendly error page by UseStatusCodePagesWithReExecute.
             };
         });
     }

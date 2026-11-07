@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -133,8 +134,15 @@ internal static class AuthenticationSetup
         // Signs in again silently (the identity server session is still valid) to pick up profile changes.
         group.MapGet("/refresh", (string? returnUrl) => Challenge(returnUrl, prompt: null));
 
-        group.MapPost("/logout", async (HttpContext context, SessionTokenService tokens) =>
+        group.MapPost("/logout", async (HttpContext context, SessionTokenService tokens, IAntiforgery antiforgery) =>
         {
+            // Explicit check: the endpoint binds no form fields, so the antiforgery middleware would not
+            // validate requests that are not form posts. Without it another site could sign users out.
+            if (!await antiforgery.IsRequestValidAsync(context))
+            {
+                return Results.BadRequest();
+            }
+
             var properties = new AuthenticationProperties { RedirectUri = "/signed-out" };
             if (context.User.FindFirst(ServerSideTicketStore.SessionKeyClaim)?.Value is { } sessionKey)
             {
@@ -144,7 +152,8 @@ internal static class AuthenticationSetup
             }
 
             return Results.SignOut(properties, [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]);
-        });
+        })
+        .DisableAntiforgery(); // validated explicitly above
     }
 
     private static IResult Challenge(string? returnUrl, string? prompt)

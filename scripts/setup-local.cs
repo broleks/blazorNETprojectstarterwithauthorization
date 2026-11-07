@@ -42,7 +42,8 @@ Ensure("WEB_CLIENT_SECRET", () => Secret(32));
 Ensure("CERT_PASSWORD", () => Secret(24));
 Ensure("GOOGLE_CLIENT_ID", () => "");
 Ensure("GOOGLE_CLIENT_SECRET", () => "");
-Ensure("ACCOUNT_POSTS_PER_MINUTE", () => "20");
+// Production keeps the default of 20 sign-in/registration posts per minute per IP; locally the E2E suite needs more.
+Ensure("ACCOUNT_POSTS_PER_MINUTE", () => "200");
 WriteEnv(envPath, env);
 Console.WriteLine("✔ .env");
 
