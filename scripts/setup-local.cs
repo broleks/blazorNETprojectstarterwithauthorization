@@ -54,7 +54,9 @@ CreateTokenCertificate(Path.Combine(certs, "openiddict-encryption.pfx"), "CN=Sta
 ExportHttpsDevelopmentCertificate();
 
 // 3. User secrets for `dotnet run` (variant 2) -----------------------------------------------
-const string sql = "Server=localhost,14333;Database=Starter;Encrypt=True;TrustServerCertificate=True";
+// 127.0.0.1, not "localhost": on Windows "localhost" may resolve to IPv6 (::1) first, while Docker publishes the
+// port on IPv4 only, and the connection then waits until it times out.
+const string sql = "Server=127.0.0.1,14333;Database=Starter;Encrypt=True;TrustServerCertificate=True";
 var migrations = $"{sql};User Id=starter_migrator;Password={env["SQL_MIGRATOR_PASSWORD"]}";
 SetUserSecrets("starter-identity-3b7e9a41", new()
 {

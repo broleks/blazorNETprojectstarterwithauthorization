@@ -41,7 +41,7 @@ Then start `Starter.Identity`, `Starter.Api`, `Starter.Web` with the `https` lau
 ## Addresses
 
 The same in both variants: Web `https://localhost:7003`, Identity `https://localhost:7001`,
-API `https://localhost:7002`, Mailpit `http://localhost:8025` (SMTP on 1025), SQL Server `localhost,14333`.
+API `https://localhost:7002`, Mailpit `http://localhost:8025` (SMTP on 1025), SQL Server `127.0.0.1,14333`.
 All ports are bound to 127.0.0.1.
 
 In variant 1 the three app containers share one network namespace (the `localhost` service), so inside the
@@ -73,7 +73,7 @@ The cookie names differ, and in production each app has its own host name.
 
 ## Database access
 
-Connect with any SQL client to `localhost,14333` as `sa` with `MSSQL_SA_PASSWORD` from `.env`. The data is kept in
+Connect with any SQL client to `127.0.0.1,14333` as `sa` with `MSSQL_SA_PASSWORD` from `.env`. The data is kept in
 the `sqlserver-data` volume; `docker compose down --volumes` deletes it.
 
 ## Troubleshooting
@@ -84,4 +84,5 @@ the `sqlserver-data` volume; `docker compose down --volumes` deletes it.
 | "Too many attempts" while testing | Raise `ACCOUNT_POSTS_PER_MINUTE` in `.env` (Compose) or `RateLimiting:AccountPostsPerMinute` |
 | Signed out after restarting containers | Expected only if `.certs/openiddict-*.pfx` changed (tokens are signed with them) |
 | Login loop / "We could not sign you in" | Check that Identity's `OpenIddict:Clients:starter-web` redirect URI and client secret match the web app |
+| `SqlException` … timeout when an app starts (variant 2) | Docker Desktop must be running with `sqlserver` healthy. The connection string must use `127.0.0.1,14333` (not `localhost`); re-run `dotnet run scripts/setup-local.cs` to update the user secrets |
 | No email | Open Mailpit at http://localhost:8025; check Identity logs for "could not be sent" |

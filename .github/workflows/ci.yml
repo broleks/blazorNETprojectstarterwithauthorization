@@ -130,7 +130,7 @@ jobs:
 
       - name: Run E2E tests
         run: |
-          export E2E_SQL="Server=localhost,14333;Database=Starter;User Id=sa;Password=$(grep '^MSSQL_SA_PASSWORD=' .env | cut -d= -f2-);TrustServerCertificate=True"
+          export E2E_SQL="Server=127.0.0.1,14333;Database=Starter;User Id=sa;Password=$(grep '^MSSQL_SA_PASSWORD=' .env | cut -d= -f2-);TrustServerCertificate=True"
           dotnet test --project tests/Starter.E2E.Tests --no-build --configuration Release \
             --report-xunit-html --report-xunit-junit --results-directory TestResults/e2e
 
