@@ -1,0 +1,152 @@
+# Builds the solution, runs the integration tests, checks the container images and runs the Playwright
+# end-to-end tests against an isolated Docker Compose environment with synthetic data.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    name: Build and integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore (locked)
+        run: dotnet restore Starter.slnx --locked-mode
+
+      - name: Build
+        run: dotnet build Starter.slnx --no-restore --configuration Release
+
+      - name: Check that EF Core migrations match the model
+        run: |
+          dotnet tool restore
+          for project in Api Identity Web; do
+            dotnet ef migrations has-pending-model-changes --project src/Starter.$project --configuration Release --no-build
+          done
+
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list Starter.slnx package --vulnerable --include-transitive | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then exit 1; fi
+
+      - name: Integration tests (SQL Server via Testcontainers)
+        run: >
+          dotnet test --project tests/Starter.Api.Tests --no-build --configuration Release
+          --report-xunit-html --report-xunit-junit --results-directory TestResults/integration
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: TestResults/integration
+          retention-days: 14
+
+  container-images:
+    name: Container image ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [Identity, Api, Web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Starter.${{ matrix.app }}/Dockerfile
+          tags: starter-image:ci
+          load: true
+          push: false
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+      - name: Image must not run as root
+        run: |
+          user=$(docker image inspect starter-image:ci --format '{{.Config.User}}')
+          echo "Configured user: '$user'"
+          if [ -z "$user" ] || [ "$user" = "root" ] || [ "$user" = "0" ]; then exit 1; fi
+
+      - name: Scan image for known vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: starter-image:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+  e2e:
+    name: End-to-end tests (Playwright)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # The environment is created for this run only: fresh random passwords, a fresh development
+      # certificate (which the CI browser does not trust, hence the flag), synthetic test accounts.
+      E2E_IGNORE_HTTPS_ERRORS: "true"
+      E2E_ARTIFACTS: ${{ github.workspace }}/TestResults/e2e/playwright
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Create local secrets and certificates for this run
+        run: dotnet run scripts/setup-local.cs
+
+      - name: Start the full stack
+        run: docker compose --profile app up -d --build --wait
+
+      - name: Build the E2E tests and install the browser
+        run: |
+          dotnet build tests/Starter.E2E.Tests --configuration Release
+          pwsh tests/Starter.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run E2E tests
+        run: |
+          export E2E_SQL="Server=localhost,14333;Database=Starter;User Id=sa;Password=$(grep '^MSSQL_SA_PASSWORD=' .env | cut -d= -f2-);TrustServerCertificate=True"
+          dotnet test --project tests/Starter.E2E.Tests --no-build --configuration Release \
+            --report-xunit-html --report-xunit-junit --results-directory TestResults/e2e
+
+      - name: Collect container logs
+        if: failure()
+        run: docker compose --profile app logs --no-color > TestResults/compose.log 2>&1 || true
+
+      # Traces and screenshots of failed tests. They contain only synthetic data, but are still kept briefly.
+      - name: Upload test results and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: TestResults
+          retention-days: 7
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose --profile app down --volumes

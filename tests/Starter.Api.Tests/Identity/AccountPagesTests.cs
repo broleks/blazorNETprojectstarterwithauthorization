@@ -149,7 +149,7 @@ public sealed class AccountPagesTests(StarterFixture fixture) : ApiTestBase(fixt
     }
 }
 
-/// <summary>The controllable part of the Google integration (the real Google sign-in is verified manually, see docs/google.md).</summary>
+/// <summary>The controllable part of the Google integration (the real Google sign-in is verified manually, see docs/google-sign-in.md).</summary>
 public sealed class GoogleSignInTests(StarterFixture fixture) : ApiTestBase(fixture), IAsyncLifetime
 {
     private IdentityFactory google = default!;

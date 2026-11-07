@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using AuthenticationException = MailKit.Security.AuthenticationException;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -65,16 +66,25 @@ internal sealed class SmtpAccountEmailSender(
                 """,
         }.ToMessageBody();
 
-        using var client = new SmtpClient();
-        await client.ConnectAsync(settings.Host, settings.Port, ParseSecurity(settings.Security), cancellationToken);
-        if (!string.IsNullOrEmpty(settings.UserName))
+        try
         {
-            await client.AuthenticateAsync(settings.UserName, settings.Password ?? string.Empty, cancellationToken);
-        }
+            using var client = new SmtpClient();
+            await client.ConnectAsync(settings.Host, settings.Port, ParseSecurity(settings.Security), cancellationToken);
+            if (!string.IsNullOrEmpty(settings.UserName))
+            {
+                await client.AuthenticateAsync(settings.UserName, settings.Password ?? string.Empty, cancellationToken);
+            }
 
-        await client.SendAsync(message, cancellationToken);
-        await client.DisconnectAsync(quit: true, cancellationToken);
-        logger.LogInformation("Account email '{Subject}' sent", subject);
+            await client.SendAsync(message, cancellationToken);
+            await client.DisconnectAsync(quit: true, cancellationToken);
+            logger.LogInformation("Account email '{Subject}' sent", subject);
+        }
+        catch (Exception ex) when (ex is MailKit.ProtocolException or MailKit.CommandException or System.Net.Sockets.SocketException or IOException or AuthenticationException or SslHandshakeException)
+        {
+            // The account action itself succeeded; the user is told to check their inbox and can ask for the
+            // email again. The failure is logged for operators (without the recipient's address).
+            logger.LogError(ex, "Account email '{Subject}' could not be sent", subject);
+        }
     }
 
     // In-memory counter: good enough for a single instance. With several instances each one counts

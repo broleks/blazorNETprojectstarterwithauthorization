@@ -1,0 +1,24 @@
+# Weekly dependency update pull requests. Review them with the steps in docs/maintenance.md.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      aspnetcore-efcore:
+        patterns: ["Microsoft.AspNetCore.*", "Microsoft.EntityFrameworkCore*", "Microsoft.Extensions.*", "System.*"]
+      openiddict:
+        patterns: ["OpenIddict*"]
+      testing:
+        patterns: ["xunit*", "Microsoft.Playwright", "Testcontainers*"]
+
+  - package-ecosystem: docker
+    directories: ["/src/Starter.Api", "/src/Starter.Identity", "/src/Starter.Web"]
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

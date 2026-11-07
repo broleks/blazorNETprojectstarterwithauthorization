@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": { "value": "starter" },
+    "environmentName": { "value": "prod" },
+    "imageTag": { "value": "REPLACE-with-image-tag" },
+    "sqlAdminGroupObjectId": { "value": "00000000-0000-0000-0000-000000000000" },
+    "sqlAdminGroupName": { "value": "sg-starter-sql-admins" },
+    "appServiceSku": { "value": "P0v3" },
+    "instanceCount": { "value": 1 },
+    "enableGoogleSignIn": { "value": false },
+    "emailFromAddress": { "value": "no-reply@example.com" },
+    "smtpHost": { "value": "smtp.azurecomm.net" },
+    "smtpUserName": { "value": "" },
+    "signingCertificateThumbprint": { "value": "" },
+    "encryptionCertificateThumbprint": { "value": "" }
+  }
+}
