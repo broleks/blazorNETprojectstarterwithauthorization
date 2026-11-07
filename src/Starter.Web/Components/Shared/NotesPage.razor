@@ -1,0 +1,118 @@
+@inject NotesApi Api
+@inject ToastService Toasts
+
+@* Paged list of active or archived notes, shared by "My Notes" and "Archive". *@
+@if (result is null)
+{
+    <LoadingState Text="Loading notes…" />
+}
+else if (!result.Succeeded)
+{
+    <ApiErrorAlert Result="result" OnRetry="() => LoadAsync(currentPage)" />
+}
+else if (result.Value!.Items.Count == 0 && currentPage == 1)
+{
+    <div class="empty-state" data-testid="empty-notes">
+        @if (Archived)
+        {
+            <p>Your archive is empty.</p>
+        }
+        else
+        {
+            <p>You have no notes yet.</p>
+            <a class="btn btn-secondary" href="/notes/new">Write your first note</a>
+        }
+    </div>
+}
+else
+{
+    <ApiErrorAlert Result="actionResult" />
+    <NoteList Notes="result.Value.Items">
+        <Actions>
+            @if (Archived)
+            {
+                <button type="button" class="btn btn-small btn-secondary" disabled="@busy" @onclick="() => RestoreAsync(context)">Restore<span class="visually-hidden"> @context.Title</span></button>
+                <button type="button" class="btn btn-small btn-danger-outline" disabled="@busy" @onclick="() => DeleteAsync(context)">Delete<span class="visually-hidden"> @context.Title</span></button>
+            }
+        </Actions>
+    </NoteList>
+
+    <nav class="pager" aria-label="Pages">
+        <button type="button" class="btn btn-secondary btn-small" disabled="@(currentPage <= 1)" @onclick="() => LoadAsync(currentPage - 1)">Previous</button>
+        <span>Page @(currentPage) of @Math.Max(1, (int)Math.Ceiling(result.Value.TotalCount / (double)result.Value.PageSize))</span>
+        <button type="button" class="btn btn-secondary btn-small" disabled="@(!result.Value.HasNextPage)" @onclick="() => LoadAsync(currentPage + 1)">Next</button>
+    </nav>
+}
+
+<ConfirmDialog @ref="confirm" Title="Delete note?" Text="@confirmText" ConfirmLabel="Delete permanently" />
+
+@code {
+    private ApiResult<PagedResponse<NoteSummary>>? result;
+    private IApiResult? actionResult;
+    private ConfirmDialog confirm = default!;
+    private string confirmText = string.Empty;
+    private int currentPage = 1;
+    private bool busy;
+
+    [Parameter] public bool Archived { get; set; }
+
+    protected override Task OnParametersSetAsync() => LoadAsync(1);
+
+    private async Task LoadAsync(int pageNumber)
+    {
+        currentPage = pageNumber;
+        result = null;
+        result = await Api.GetNotesAsync(Archived, currentPage);
+
+        // If the last item of a page was removed, show the previous page instead of an empty one.
+        if (result is { Succeeded: true, Value.Items.Count: 0 } && currentPage > 1)
+        {
+            await LoadAsync(currentPage - 1);
+        }
+    }
+
+    private async Task RestoreAsync(NoteSummary summary)
+    {
+        busy = true;
+        var note = await Api.GetNoteAsync(summary.Id);
+        actionResult = note;
+        if (note.Succeeded)
+        {
+            var updated = await Api.UpdateNoteAsync(summary.Id, new UpdateNoteRequest
+            {
+                Title = note.Value!.Title,
+                Content = note.Value.Content,
+                IsArchived = false,
+            });
+            actionResult = updated;
+            if (updated.Succeeded)
+            {
+                Toasts.Show($"\"{summary.Title}\" was restored.");
+                await LoadAsync(currentPage);
+            }
+        }
+
+        busy = false;
+    }
+
+    private async Task DeleteAsync(NoteSummary summary)
+    {
+        confirmText = $"\"{summary.Title}\" will be deleted permanently. This cannot be undone.";
+        StateHasChanged();
+        if (!await confirm.AskAsync())
+        {
+            return;
+        }
+
+        busy = true;
+        var deleted = await Api.DeleteNoteAsync(summary.Id);
+        actionResult = deleted;
+        if (deleted.Succeeded)
+        {
+            Toasts.Show($"\"{summary.Title}\" was deleted.");
+            await LoadAsync(currentPage);
+        }
+
+        busy = false;
+    }
+}

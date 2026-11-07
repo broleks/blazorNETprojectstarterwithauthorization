@@ -1,0 +1,14 @@
+@model Starter.Identity.Pages.Account.Manage.ManagePageModel
+@{
+    var current = ViewContext.RouteData.Values["page"]?.ToString();
+    string? Current(string page) => current == page ? "page" : null;
+}
+<nav class="manage-nav" aria-label="Account settings">
+    <a asp-page="./Index" asp-route-returnUrl="@Model.ReturnUrl" aria-current="@Current("/Account/Manage/Index")">Profile</a>
+    <a asp-page="./ChangePassword" asp-route-returnUrl="@Model.ReturnUrl" aria-current="@Current("/Account/Manage/ChangePassword")">Password</a>
+    <a asp-page="./ExternalLogins" asp-route-returnUrl="@Model.ReturnUrl" aria-current="@Current("/Account/Manage/ExternalLogins")">Sign-in methods</a>
+</nav>
+@if (Model.ReturnToAppUrl is not null)
+{
+    <p class="return-link"><a class="btn btn-secondary" href="@Model.ReturnToAppUrl" data-testid="return-to-app">← Return to the app</a></p>
+}

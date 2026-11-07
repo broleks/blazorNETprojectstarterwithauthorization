@@ -1,0 +1,27 @@
+@inject SignInManager<ApplicationUser> SignInManager
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Starter account</title>
+    <link rel="stylesheet" href="~/_content/Starter.Ui/theme.css" asp-append-version="true" />
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+</head>
+<body class="account-body">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="account-header">
+        <span class="brand"><span class="brand-mark" aria-hidden="true">S</span> Starter</span>
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <a class="header-link" asp-page="/Account/Manage/Index">Your account</a>
+        }
+    </header>
+    <main id="main" class="account-main" tabindex="-1">
+        @RenderBody()
+    </main>
+    <footer class="account-footer">
+        <p>Your account is used to sign in to Starter applications.</p>
+    </footer>
+</body>
+</html>

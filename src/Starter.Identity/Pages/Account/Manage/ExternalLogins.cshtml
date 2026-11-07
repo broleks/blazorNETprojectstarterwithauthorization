@@ -1,0 +1,45 @@
+@page
+@model Starter.Identity.Pages.Account.Manage.ExternalLoginsModel
+@{
+    ViewData["Title"] = "Sign-in methods";
+}
+<section class="card manage-card" aria-labelledby="page-title">
+    <h1 id="page-title">Your account</h1>
+    <partial name="_ManageNav" model="Model" />
+    <partial name="_Alerts" model="(Model.ErrorMessage, Model.StatusMessage)" />
+
+    <h2>Sign-in methods</h2>
+    <ul class="list-plain">
+        <li class="list-row"><span>Email and password</span><span class="muted">@(Model.CanRemove || Model.CurrentLogins.Count == 0 ? "Available" : "Not set")</span></li>
+        @foreach (var login in Model.CurrentLogins)
+        {
+            <li class="list-row">
+                <span>@(login.ProviderDisplayName ?? login.LoginProvider)</span>
+                @if (Model.CanRemove)
+                {
+                    <form asp-page-handler="RemoveLogin" method="post">
+                        <input type="hidden" name="loginProvider" value="@login.LoginProvider" />
+                        <input type="hidden" name="providerKey" value="@login.ProviderKey" />
+                        <input type="hidden" asp-for="ReturnUrl" />
+                        <button type="submit" class="btn btn-link">Disconnect</button>
+                    </form>
+                }
+            </li>
+        }
+    </ul>
+
+    @if (Model.OtherLogins.Count > 0)
+    {
+        <form asp-page-handler="LinkLogin" method="post" class="stack">
+            <input type="hidden" asp-for="ReturnUrl" />
+            @foreach (var provider in Model.OtherLogins)
+            {
+                <button type="submit" class="btn btn-secondary" name="provider" value="@provider.Name">Connect @provider.DisplayName</button>
+            }
+        </form>
+    }
+    else if (!Model.AnyProviderConfigured)
+    {
+        <p class="muted" data-testid="no-external-providers">No external sign-in providers are configured for this application.</p>
+    }
+</section>

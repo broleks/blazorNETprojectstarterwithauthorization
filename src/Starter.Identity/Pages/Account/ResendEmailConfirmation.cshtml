@@ -1,0 +1,25 @@
+@page
+@model Starter.Identity.Pages.Account.ResendEmailConfirmationModel
+@{
+    ViewData["Title"] = "Resend confirmation email";
+}
+<section class="card auth-card" aria-labelledby="page-title">
+    <h1 id="page-title">Resend confirmation email</h1>
+    @if (Model.Sent)
+    {
+        <p class="alert alert-success" role="status">If an unconfirmed account uses this address, we have sent a new confirmation link.</p>
+        <p><a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Back to sign in</a></p>
+    }
+    else
+    {
+        <form method="post" novalidate class="stack">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div class="field">
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" type="email" autocomplete="email" required />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Send link</button>
+        </form>
+    }
+</section>

@@ -1,0 +1,24 @@
+@inject NavigationManager Navigation
+
+@* Shows a user-friendly message for a failed API call. Never shows technical details. *@
+@if (Result is { Succeeded: false })
+{
+    <div class="alert alert-error" role="alert" data-testid="api-error">
+        <p>@Result.Message</p>
+        @if (Result.Status == ApiStatus.SessionExpired)
+        {
+            <a class="btn btn-primary" href="@LoginUrl" data-enhance-nav="false">Sign in again</a>
+        }
+        else if (OnRetry.HasDelegate && Result.Status is ApiStatus.Unavailable or ApiStatus.Failed or ApiStatus.RateLimited)
+        {
+            <button type="button" class="btn btn-secondary" @onclick="OnRetry">Try again</button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IApiResult? Result { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private string LoginUrl => "authentication/login?returnUrl=" + Uri.EscapeDataString("/" + Navigation.ToBaseRelativePath(Navigation.Uri));
+}

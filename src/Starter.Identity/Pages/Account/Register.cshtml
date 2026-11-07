@@ -1,0 +1,38 @@
+@page
+@model Starter.Identity.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Create an account";
+}
+<section class="card auth-card" aria-labelledby="page-title">
+    <h1 id="page-title">Create an account</h1>
+
+    <form method="post" novalidate class="stack">
+        <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert"></div>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div class="field">
+            <label asp-for="Input.DisplayName"></label>
+            <input asp-for="Input.DisplayName" autocomplete="nickname" required aria-describedby="display-name-hint" />
+            <span id="display-name-hint" class="hint">Shown in the app. You can change it later.</span>
+            <span asp-validation-for="Input.DisplayName" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Email">Email</label>
+            <input asp-for="Input.Email" type="email" autocomplete="email" required />
+            <span asp-validation-for="Input.Email" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Password">Password</label>
+            <input asp-for="Input.Password" autocomplete="new-password" required aria-describedby="password-hint" />
+            <span id="password-hint" class="hint">At least 12 characters. A short sentence works well.</span>
+            <span asp-validation-for="Input.Password" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.ConfirmPassword"></label>
+            <input asp-for="Input.ConfirmPassword" autocomplete="new-password" required />
+            <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+    </form>
+
+    <p class="card-footer-text">Already have an account? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a></p>
+</section>

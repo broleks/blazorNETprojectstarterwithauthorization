@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Request/response models shared by the API and its clients (Starter.Web today, a mobile app
+       later). Keep it free of EF Core and ASP.NET Core dependencies so any .NET client can use it. -->
+
+</Project>

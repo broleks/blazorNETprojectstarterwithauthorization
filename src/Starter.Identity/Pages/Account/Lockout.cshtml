@@ -1,0 +1,9 @@
+@page
+@{
+    ViewData["Title"] = "Account locked";
+}
+<section class="card auth-card" aria-labelledby="page-title">
+    <h1 id="page-title">Too many sign-in attempts</h1>
+    <p role="alert">For your security, sign-in is temporarily blocked for this account. Try again in 15 minutes or reset your password.</p>
+    <a class="btn btn-secondary btn-block" asp-page="./ForgotPassword">Reset password</a>
+</section>

@@ -1,0 +1,27 @@
+@* Read-only list of note summaries; each item links to the editor. *@
+<ul class="note-list" data-testid="note-list">
+    @foreach (var note in Notes)
+    {
+        <li class="note-item" data-testid="note-item">
+            <a href="@($"/notes/{note.Id}")" class="note-link">
+                <span class="note-title">@note.Title</span>
+                @if (!string.IsNullOrWhiteSpace(note.Preview))
+                {
+                    <span class="note-preview">@note.Preview</span>
+                }
+                <span class="note-meta">Updated <time datetime="@note.UpdatedAt.ToString("O")">@note.UpdatedAt.ToLocalTime().ToString("d MMM yyyy, HH:mm", System.Globalization.CultureInfo.InvariantCulture)</time></span>
+            </a>
+            @if (Actions is not null)
+            {
+                <div class="note-actions">@Actions(note)</div>
+            }
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<NoteSummary> Notes { get; set; } = [];
+
+    /// <summary>Optional buttons shown next to each note (e.g. Restore / Delete in the archive).</summary>
+    [Parameter] public RenderFragment<NoteSummary>? Actions { get; set; }
+}

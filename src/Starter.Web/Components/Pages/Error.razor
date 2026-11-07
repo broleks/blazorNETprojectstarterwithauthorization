@@ -1,0 +1,22 @@
+@page "/error"
+@attribute [AllowAnonymous]
+@layout EmptyLayout
+@using System.Diagnostics
+
+<PageTitle>Error · Starter</PageTitle>
+
+<section class="card auth-card" aria-labelledby="page-title">
+    <h1 id="page-title">Something went wrong</h1>
+    <p>An unexpected error occurred. Please try again in a moment.</p>
+    @if (RequestId is not null)
+    {
+        <p class="muted">Reference: <code>@RequestId</code></p>
+    }
+    <a class="btn btn-secondary" href="/">Go to the dashboard</a>
+</section>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId => Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

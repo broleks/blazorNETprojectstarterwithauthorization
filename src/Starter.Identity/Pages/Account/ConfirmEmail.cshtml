@@ -1,0 +1,19 @@
+@page
+@model Starter.Identity.Pages.Account.ConfirmEmailModel
+@{
+    ViewData["Title"] = Model.Succeeded ? "Email confirmed" : "Link not valid";
+}
+<section class="card auth-card" aria-labelledby="page-title">
+    @if (Model.Succeeded)
+    {
+        <h1 id="page-title">Email confirmed</h1>
+        <p role="status">Thank you. Your account is ready.</p>
+        <a class="btn btn-primary btn-block" href="@Model.SafeReturnUrl">Continue</a>
+    }
+    else
+    {
+        <h1 id="page-title">This link is not valid</h1>
+        <p role="alert">The confirmation link is invalid or has expired.</p>
+        <a class="btn btn-secondary btn-block" asp-page="./ResendEmailConfirmation" asp-route-returnUrl="@Model.ReturnUrl">Send a new link</a>
+    }
+</section>

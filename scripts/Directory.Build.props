@@ -1,0 +1,7 @@
+<Project>
+  <!-- Stops the repository-wide Directory.Build.props from applying to the helper scripts in this folder. -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>

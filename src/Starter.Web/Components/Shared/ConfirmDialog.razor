@@ -1,0 +1,69 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@*
+    Accessible confirmation dialog built on the native <dialog> element: showModal() traps focus,
+    Escape closes it, and focus returns to the element that opened it.
+*@
+<dialog @ref="dialog" class="dialog" aria-labelledby="@titleId" aria-describedby="@textId" data-testid="confirm-dialog">
+    <h2 id="@titleId">@Title</h2>
+    <p id="@textId">@Text</p>
+    <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" @onclick="() => CloseAsync(false)" autofocus>Cancel</button>
+        <button type="button" class="btn btn-danger" @onclick="() => CloseAsync(true)">@ConfirmLabel</button>
+    </div>
+</dialog>
+
+@code {
+    private readonly string titleId = "dlg-title-" + Guid.NewGuid().ToString("N");
+    private readonly string textId = "dlg-text-" + Guid.NewGuid().ToString("N");
+    private ElementReference dialog;
+    private IJSObjectReference? module;
+    private TaskCompletionSource<bool>? pending;
+    private DotNetObjectReference<ConfirmDialog>? self;
+
+    [Parameter] public string Title { get; set; } = "Are you sure?";
+    [Parameter] public string Text { get; set; } = string.Empty;
+    [Parameter] public string ConfirmLabel { get; set; } = "Delete";
+
+    /// <summary>Opens the dialog and returns true when the user confirms.</summary>
+    public async Task<bool> AskAsync()
+    {
+        module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/dialog.js");
+        pending = new TaskCompletionSource<bool>();
+        self ??= DotNetObjectReference.Create(this);
+        await module.InvokeVoidAsync("showModal", dialog, self);
+        return await pending.Task;
+    }
+
+    /// <summary>Called from JavaScript when the dialog is closed with Escape.</summary>
+    [JSInvokable]
+    public void OnCancelled() => pending?.TrySetResult(false);
+
+    private async Task CloseAsync(bool confirmed)
+    {
+        if (module is not null)
+        {
+            await module.InvokeVoidAsync("close", dialog);
+        }
+
+        pending?.TrySetResult(confirmed);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        pending?.TrySetResult(false);
+        self?.Dispose();
+        if (module is not null)
+        {
+            try
+            {
+                await module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit is gone; nothing to clean up in the browser.
+            }
+        }
+    }
+}

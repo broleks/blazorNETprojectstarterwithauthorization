@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app-shell @(menuOpen ? "menu-open" : null)">
+    <header class="topbar">
+        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">S</span> Starter</a>
+        <button type="button" class="menu-toggle" aria-controls="main-navigation" aria-expanded="@(menuOpen ? "true" : "false")"
+                @onclick="ToggleMenu" data-testid="menu-toggle">
+            <span class="menu-icon" aria-hidden="true"></span>
+            <span>Menu</span>
+        </button>
+    </header>
+
+    <main id="main" class="content" tabindex="-1">
+        <ErrorBoundary @ref="errorBoundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                <div class="alert alert-error" role="alert">
+                    <p>Something went wrong while showing this page.</p>
+                    <button type="button" class="btn btn-secondary" @onclick="Recover">Try again</button>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+
+    <aside id="main-navigation" class="sidebar" aria-label="Main">
+        <NavMenu OnNavigate="CloseMenu" />
+    </aside>
+</div>
+
+<Toast />
+
+@code {
+    private bool menuOpen;
+    private ErrorBoundary? errorBoundary;
+
+    private void ToggleMenu() => menuOpen = !menuOpen;
+
+    private void CloseMenu() => menuOpen = false;
+
+    private void Recover() => errorBoundary?.Recover();
+}

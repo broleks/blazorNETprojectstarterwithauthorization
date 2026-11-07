@@ -1,0 +1,6 @@
+<Project>
+  <!-- The scripts use no packages; this file stops central package management from applying here. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

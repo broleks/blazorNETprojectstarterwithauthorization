@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Shared look and feel. Starter.Web and Starter.Identity both reference this Razor class library, so the
+       account pages and the app use one stylesheet (served at _content/Starter.Ui/theme.css).
+       Shared Razor components can be added here later if both applications need them. -->
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+</Project>

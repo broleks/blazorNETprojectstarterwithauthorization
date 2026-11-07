@@ -1,0 +1,238 @@
+# Local environment for the starter. Secrets come from .env (create it with: dotnet run scripts/setup-local.cs).
+#
+#   Variant 1 - everything in containers:        docker compose --profile app up -d --build --wait
+#   Variant 2 - only SQL Server and Mailpit here: docker compose up -d --wait   (apps run with dotnet run / Visual Studio)
+#
+# In both variants the browser uses the same addresses:
+#   https://localhost:7003  Starter.Web        https://localhost:7001  Starter.Identity
+#   https://localhost:7002  Starter.Api        http://localhost:8025   Mailpit (test inbox)
+# Ports are bound to 127.0.0.1 only, so nothing is exposed to the local network.
+name: starter
+
+x-app: &app
+  restart: unless-stopped
+  # All three apps share the network namespace of the "localhost" service. Inside the containers
+  # https://localhost:7001 therefore reaches Starter.Identity exactly as it does in the browser, so the token
+  # issuer, redirect URIs and Google callback URL are identical in both variants.
+  network_mode: "service:localhost"
+  volumes:
+    - ./.certs:/https:ro
+  depends_on: &app-depends
+    localhost:
+      condition: service_started
+
+x-app-environment: &app-environment
+  ASPNETCORE_ENVIRONMENT: Docker
+  # The ASP.NET Core development certificate (exported by the setup script) is used for HTTPS...
+  ASPNETCORE_Kestrel__Certificates__Default__Path: /https/localhost.pfx
+  ASPNETCORE_Kestrel__Certificates__Default__Password: ${CERT_PASSWORD:?Run 'dotnet run scripts/setup-local.cs' first}
+  # ...and its public part is trusted for server-to-server calls. Certificate validation stays on.
+  SSL_CERT_DIR: /https/trust:/etc/ssl/certs
+
+x-sql: &sql "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True"
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run 'dotnet run scripts/setup-local.cs' first}
+    ports:
+      - "127.0.0.1:14333:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  # Creates the database, schemas and least-privilege logins (idempotent), then exits.
+  db-setup:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./deploy/sql:/scripts:ro
+    entrypoint:
+      - /opt/mssql-tools18/bin/sqlcmd
+      - -C
+      - -S
+      - sqlserver
+      - -U
+      - sa
+      - -P
+      - ${MSSQL_SA_PASSWORD}
+      - -b
+      - -i
+      - /scripts/create-database-and-users.sql
+      - -v
+      - DatabaseName=Starter
+      - MigratorPassword=${SQL_MIGRATOR_PASSWORD}
+      - IdentityPassword=${SQL_IDENTITY_PASSWORD}
+      - ApiPassword=${SQL_API_PASSWORD}
+      - WebPassword=${SQL_WEB_PASSWORD}
+    restart: "no"
+
+  # Local SMTP server and web inbox. Account emails (confirmation, password reset) end up here.
+  mailpit:
+    image: axllent/mailpit:v1.29
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+    environment:
+      MP_MAX_MESSAGES: 2000
+
+  # ------------------------------------------------------------------------------------------------
+  # Profile "app": the three applications.
+  # ------------------------------------------------------------------------------------------------
+
+  # Holds the shared network namespace and publishes the HTTPS ports.
+  localhost:
+    profiles: [app]
+    image: mcr.microsoft.com/dotnet/runtime-deps:10.0
+    user: app
+    init: true
+    command: ["sleep", "infinity"]
+    ports:
+      - "127.0.0.1:7001:7001"
+      - "127.0.0.1:7002:7002"
+      - "127.0.0.1:7003:7003"
+    restart: unless-stopped
+
+  identity-migrate:
+    profiles: [app]
+    <<: *app
+    image: starter-identity:local
+    command: ["--migrate"]
+    restart: "no"
+    depends_on:
+      <<: *app-depends
+      db-setup:
+        condition: service_completed_successfully
+    environment: &identity-environment
+      <<: *app-environment
+      ASPNETCORE_URLS: https://+:7001
+      ConnectionStrings__Default: "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True;User Id=starter_identity;Password=${SQL_IDENTITY_PASSWORD}"
+      ConnectionStrings__Migrations: "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True;User Id=starter_migrator;Password=${SQL_MIGRATOR_PASSWORD}"
+      Authentication__Issuer: https://localhost:7001/
+      Authentication__DefaultReturnUrl: https://localhost:7003/
+      Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Authentication__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      OpenIddict__SigningCertificate__Path: /https/openiddict-signing.pfx
+      OpenIddict__SigningCertificate__Password: ${CERT_PASSWORD}
+      OpenIddict__EncryptionCertificate__Path: /https/openiddict-encryption.pfx
+      OpenIddict__EncryptionCertificate__Password: ${CERT_PASSWORD}
+      OpenIddict__Clients__starter-web__ClientSecret: ${WEB_CLIENT_SECRET:?Run 'dotnet run scripts/setup-local.cs' first}
+      OpenIddict__Clients__starter-web__RedirectUris__0: https://localhost:7003/signin-oidc
+      OpenIddict__Clients__starter-web__PostLogoutRedirectUris__0: https://localhost:7003/signout-callback-oidc
+      Email__Host: mailpit
+      Email__Port: "1025"
+      Email__Security: None
+      Email__FromAddress: no-reply@starter.local
+      RateLimiting__AccountPostsPerMinute: ${ACCOUNT_POSTS_PER_MINUTE:-20}
+
+  identity:
+    profiles: [app]
+    <<: *app
+    build:
+      context: .
+      dockerfile: src/Starter.Identity/Dockerfile
+    image: starter-identity:local
+    depends_on:
+      <<: *app-depends
+      identity-migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    environment: *identity-environment
+    healthcheck:
+      test: ["CMD", "dotnet", "Starter.Identity.dll", "--health-check", "https://localhost:7001/health/ready"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
+
+  api-migrate:
+    profiles: [app]
+    <<: *app
+    image: starter-api:local
+    command: ["--migrate"]
+    restart: "no"
+    depends_on:
+      <<: *app-depends
+      identity-migrate:
+        condition: service_completed_successfully
+    environment: &api-environment
+      <<: *app-environment
+      ASPNETCORE_URLS: https://+:7002
+      ConnectionStrings__Default: "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True;User Id=starter_api;Password=${SQL_API_PASSWORD}"
+      ConnectionStrings__Migrations: "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True;User Id=starter_migrator;Password=${SQL_MIGRATOR_PASSWORD}"
+      Authentication__Issuer: https://localhost:7001/
+
+  api:
+    profiles: [app]
+    <<: *app
+    build:
+      context: .
+      dockerfile: src/Starter.Api/Dockerfile
+    image: starter-api:local
+    depends_on:
+      <<: *app-depends
+      api-migrate:
+        condition: service_completed_successfully
+    environment: *api-environment
+    healthcheck:
+      test: ["CMD", "dotnet", "Starter.Api.dll", "--health-check", "https://localhost:7002/health/ready"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
+
+  web-migrate:
+    profiles: [app]
+    <<: *app
+    image: starter-web:local
+    command: ["--migrate"]
+    restart: "no"
+    depends_on:
+      <<: *app-depends
+      api-migrate:
+        condition: service_completed_successfully
+    environment: &web-environment
+      <<: *app-environment
+      ASPNETCORE_URLS: https://+:7003
+      ConnectionStrings__Default: "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True;User Id=starter_web;Password=${SQL_WEB_PASSWORD}"
+      ConnectionStrings__Migrations: "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True;User Id=starter_migrator;Password=${SQL_MIGRATOR_PASSWORD}"
+      Authentication__Authority: https://localhost:7001/
+      Authentication__ClientSecret: ${WEB_CLIENT_SECRET}
+      Api__BaseUrl: https://localhost:7002/
+
+  web:
+    profiles: [app]
+    <<: *app
+    build:
+      context: .
+      dockerfile: src/Starter.Web/Dockerfile
+    image: starter-web:local
+    depends_on:
+      <<: *app-depends
+      web-migrate:
+        condition: service_completed_successfully
+      identity:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment: *web-environment
+    healthcheck:
+      test: ["CMD", "dotnet", "Starter.Web.dll", "--health-check", "https://localhost:7003/health/ready"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
+
+volumes:
+  sqlserver-data:

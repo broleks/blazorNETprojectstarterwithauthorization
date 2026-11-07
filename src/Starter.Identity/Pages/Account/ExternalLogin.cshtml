@@ -1,0 +1,40 @@
+@page
+@model Starter.Identity.Pages.Account.ExternalLoginModel
+@{
+    ViewData["Title"] = $"Continue with {Model.ProviderDisplayName}";
+}
+<section class="card auth-card" aria-labelledby="page-title">
+    @switch (Model.State)
+    {
+        case Starter.Identity.Pages.Account.ExternalLoginModel.PageState.AccountExists:
+            <h1 id="page-title">You already have an account</h1>
+            <p role="alert" data-testid="external-account-exists">
+                An account with the email address <strong>@Model.Email</strong> already exists. For your security we do not
+                connect @Model.ProviderDisplayName to it automatically. Sign in with your password, then connect
+                @Model.ProviderDisplayName under <em>Your account → Sign-in methods</em>.
+            </p>
+            <a class="btn btn-primary btn-block" asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in with password</a>
+            break;
+
+        case Starter.Identity.Pages.Account.ExternalLoginModel.PageState.EmailMissing:
+            <h1 id="page-title">Email address required</h1>
+            <p role="alert">@Model.ProviderDisplayName did not share an email address, so an account cannot be created.</p>
+            <a class="btn btn-secondary btn-block" asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Back to sign in</a>
+            break;
+
+        default:
+            <h1 id="page-title">Create your account</h1>
+            <p>You signed in with @Model.ProviderDisplayName as <strong>@Model.Email</strong>. Choose a display name to finish.</p>
+            <form asp-page-handler="Confirmation" method="post" novalidate class="stack">
+                <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert"></div>
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div class="field">
+                    <label asp-for="DisplayName"></label>
+                    <input asp-for="DisplayName" autocomplete="nickname" required />
+                    <span asp-validation-for="DisplayName" class="field-error"></span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Create account</button>
+            </form>
+            break;
+    }
+</section>

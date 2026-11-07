@@ -1,0 +1,69 @@
+@page "/account"
+@using Starter.Contracts.Account
+@inject NotesApi Api
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+
+<PageTitle>Account · Starter</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Account</h1>
+        <p class="muted">Your profile and sign-in settings.</p>
+    </div>
+</div>
+
+@if (result is null)
+{
+    <LoadingState Text="Loading your profile…" />
+}
+else if (!result.Succeeded)
+{
+    <ApiErrorAlert Result="result" OnRetry="LoadAsync" />
+}
+else
+{
+    var me = result.Value!;
+    <section class="panel" aria-labelledby="profile-title">
+        <h2 id="profile-title">Profile</h2>
+        <dl class="details">
+            <dt>Display name</dt>
+            <dd data-testid="profile-display-name">@me.DisplayName</dd>
+            <dt>Email</dt>
+            <dd data-testid="profile-email">@me.Email</dd>
+        </dl>
+        <a class="btn btn-primary" href="@ManageUrl("Account/Manage")" data-testid="edit-profile">Edit profile</a>
+    </section>
+
+    <section class="panel" aria-labelledby="security-title">
+        <h2 id="security-title">Sign-in and security</h2>
+        <p class="muted">Your password and sign-in methods are managed by the Starter account service.</p>
+        <div class="button-row">
+            <a class="btn btn-secondary" href="@ManageUrl("Account/Manage/ChangePassword")">Change password</a>
+            <a class="btn btn-secondary" href="@ManageUrl("Account/Manage/ExternalLogins")">Sign-in methods</a>
+        </div>
+    </section>
+}
+
+@code {
+    private ApiResult<MeResponse>? result;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        result = null;
+        result = await Api.GetMeAsync();
+    }
+
+    /// <summary>
+    /// Link to an account page on the identity server. After a change the user returns through
+    /// /authentication/refresh, which signs in again silently so the session picks up the new profile.
+    /// </summary>
+    private string ManageUrl(string path)
+    {
+        var identity = new Uri(Configuration["Authentication:Authority"]!);
+        var back = Navigation.ToAbsoluteUri("authentication/refresh?returnUrl=" + Uri.EscapeDataString("/account"));
+        return new Uri(identity, path) + "?returnUrl=" + Uri.EscapeDataString(back.ToString());
+    }
+}

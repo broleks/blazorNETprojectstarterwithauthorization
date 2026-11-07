@@ -1,0 +1,17 @@
+@page
+@model Starter.Identity.Pages.Account.LogoutModel
+@{
+    ViewData["Title"] = "Sign out";
+}
+<section class="card auth-card" aria-labelledby="page-title">
+    <h1 id="page-title">Sign out?</h1>
+    <p>Do you want to sign out of your Starter account?</p>
+    @* Posts the original end-session parameters back to the OpenID Connect end-session endpoint, with an antiforgery token. *@
+    <form method="post" action="/connect/endsession" asp-antiforgery="true" class="stack">
+        @foreach (var parameter in Model.Parameters)
+        {
+            <input type="hidden" name="@parameter.Key" value="@parameter.Value" />
+        }
+        <button type="submit" class="btn btn-primary btn-block">Sign out</button>
+    </form>
+</section>

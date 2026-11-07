@@ -1,0 +1,13 @@
+@* Shows validation errors returned by the API for one field (the API is the source of truth). *@
+@if (Errors is not null && Errors.TryGetValue(Field, out var messages))
+{
+    @foreach (var message in messages)
+    {
+        <span class="field-error">@message</span>
+    }
+}
+
+@code {
+    [Parameter] public IReadOnlyDictionary<string, string[]>? Errors { get; set; }
+    [Parameter, EditorRequired] public string Field { get; set; } = string.Empty;
+}

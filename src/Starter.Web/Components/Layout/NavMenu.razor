@@ -1,0 +1,67 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+<AuthorizeView>
+    <Authorized>
+        <div class="user-card">
+            <span class="avatar" aria-hidden="true">@Initial(context.User.Identity?.Name)</span>
+            <div>
+                <p class="user-name" data-testid="user-display-name">@context.User.Identity?.Name</p>
+                <p class="user-email">@context.User.FindFirst("email")?.Value</p>
+            </div>
+        </div>
+
+        <nav aria-label="Main navigation">
+            <ul class="nav-list">
+                @foreach (var item in items)
+                {
+                    <li>
+                        <a href="@item.Href" class="nav-link @(IsCurrent(item) ? "active" : null)"
+                           aria-current="@(IsCurrent(item) ? "page" : null)" @onclick="OnNavigate">
+                            <span class="nav-icon" aria-hidden="true">@item.Icon</span>
+                            @item.Label
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <form action="authentication/logout" method="post" class="signout-form">
+            <AntiforgeryToken />
+            <button type="submit" class="btn btn-secondary btn-block">Sign out</button>
+        </form>
+    </Authorized>
+    <NotAuthorized>
+        <nav aria-label="Main navigation">
+            <a class="btn btn-primary btn-block" href="authentication/login">Sign in</a>
+        </nav>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private sealed record NavItem(string Href, string Label, string Icon);
+
+    private static readonly NavItem[] items =
+    [
+        new("/", "Dashboard", "◧"),
+        new("/notes", "My Notes", "✎"),
+        new("/archive", "Archive", "▤"),
+        new("/account", "Account", "◉"),
+    ];
+
+    [Parameter] public EventCallback OnNavigate { get; set; }
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private bool IsCurrent(NavItem item)
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        return item.Href == "/" ? path == "/" : path.StartsWith(item.Href, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string Initial(string? name) => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpperInvariant();
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

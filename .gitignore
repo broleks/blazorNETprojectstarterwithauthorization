@@ -1,0 +1,32 @@
+# Build output
+bin/
+obj/
+publish/
+*.user
+*.suo
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Local secrets and certificates - never commit these (see docs/configuration.md)
+.env
+.certs/
+*.pfx
+*.p12
+*.key
+*.pem
+appsettings.*.local.json
+
+# Test results, Playwright traces, screenshots and stored sign-in state.
+# Traces and storage state can contain cookies and personal data.
+TestResults/
+test-results/
+playwright-report/
+**/playwright/.auth/
+*.trx
+coverage*/
+
+# OS files
+.DS_Store
+Thumbs.db

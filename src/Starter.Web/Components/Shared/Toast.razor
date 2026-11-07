@@ -1,0 +1,20 @@
+@implements IDisposable
+@inject ToastService Toasts
+
+<div class="toast-region" role="status" aria-live="polite" aria-atomic="true">
+    @if (Toasts.Message is not null)
+    {
+        <div class="toast @(Toasts.IsError ? "toast-error" : "toast-success")" data-testid="toast">
+            <span>@Toasts.Message</span>
+            <button type="button" class="toast-close" aria-label="Dismiss message" @onclick="Toasts.Clear">×</button>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Toasts.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Toasts.Changed -= OnChanged;
+}

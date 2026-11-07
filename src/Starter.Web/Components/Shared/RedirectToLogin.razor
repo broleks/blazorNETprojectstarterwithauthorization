@@ -1,0 +1,12 @@
+@inject NavigationManager Navigation
+
+@* Shown when the session ends while the page is open (sign-out in another tab, expiry, revoked refresh token). *@
+<LoadingState Text="Your session has ended. Redirecting to sign in…" />
+
+@code {
+    protected override void OnInitialized()
+    {
+        var returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        Navigation.NavigateTo($"authentication/login?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+    }
+}

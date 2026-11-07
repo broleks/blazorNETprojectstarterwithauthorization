@@ -1,0 +1,29 @@
+@page
+@model Starter.Identity.Pages.Account.Manage.IndexModel
+@{
+    ViewData["Title"] = "Profile";
+}
+<section class="card manage-card" aria-labelledby="page-title">
+    <h1 id="page-title">Your account</h1>
+    <partial name="_ManageNav" model="Model" />
+    <partial name="_Alerts" model="((string?)null, Model.StatusMessage)" />
+
+    <h2>Profile</h2>
+    <dl class="details">
+        <dt>Email</dt>
+        <dd data-testid="account-email">@Model.Email</dd>
+        <dt>Member since</dt>
+        <dd>@Model.CreatedAt.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)</dd>
+    </dl>
+
+    <form method="post" novalidate class="stack">
+        <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert"></div>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div class="field">
+            <label asp-for="DisplayName"></label>
+            <input asp-for="DisplayName" autocomplete="nickname" required />
+            <span asp-validation-for="DisplayName" class="field-error"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Save profile</button>
+    </form>
+</section>

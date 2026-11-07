@@ -1,0 +1,63 @@
+@page "/"
+@using Starter.Contracts.Dashboard
+@inject NotesApi Api
+
+<PageTitle>Dashboard · Starter</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="muted">An overview of your notes.</p>
+    </div>
+    <a class="btn btn-primary" href="/notes/new">New note</a>
+</div>
+
+@if (result is null)
+{
+    <LoadingState Text="Loading your dashboard…" />
+}
+else if (!result.Succeeded)
+{
+    <ApiErrorAlert Result="result" OnRetry="LoadAsync" />
+}
+else
+{
+    var dashboard = result.Value!;
+    <section class="stats" aria-label="Note statistics">
+        <a class="stat-card" href="/notes">
+            <span class="stat-value" data-testid="stat-active">@dashboard.ActiveNotes</span>
+            <span class="stat-label">Active notes</span>
+        </a>
+        <a class="stat-card" href="/archive">
+            <span class="stat-value" data-testid="stat-archived">@dashboard.ArchivedNotes</span>
+            <span class="stat-label">Archived notes</span>
+        </a>
+    </section>
+
+    <section class="panel" aria-labelledby="recent-title">
+        <h2 id="recent-title">Recently updated</h2>
+        @if (dashboard.RecentNotes.Count == 0)
+        {
+            <div class="empty-state" data-testid="empty-recent">
+                <p>You have no notes yet.</p>
+                <a class="btn btn-secondary" href="/notes/new">Write your first note</a>
+            </div>
+        }
+        else
+        {
+            <NoteList Notes="dashboard.RecentNotes" />
+        }
+    </section>
+}
+
+@code {
+    private ApiResult<DashboardResponse>? result;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        result = null;
+        result = await Api.GetDashboardAsync();
+    }
+}

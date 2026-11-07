@@ -1,0 +1,163 @@
+@page "/notes/new"
+@page "/notes/{Id:guid}"
+@inject NotesApi Api
+@inject NavigationManager Navigation
+@inject ToastService Toasts
+
+<PageTitle>@(IsNew ? "New note" : "Edit note") · Starter</PageTitle>
+
+<div class="page-header">
+    <div>
+        <a class="back-link" href="@(model.IsArchived ? "/archive" : "/notes")">← Back to @(model.IsArchived ? "archive" : "notes")</a>
+        <h1>@(IsNew ? "New note" : "Edit note")</h1>
+        @if (!IsNew && loaded is not null && model.IsArchived)
+        {
+            <p class="badge" data-testid="archived-badge">Archived</p>
+        }
+    </div>
+</div>
+
+@if (!IsNew && loadResult is null)
+{
+    <LoadingState Text="Loading note…" />
+}
+else if (loadResult is { Succeeded: false })
+{
+    <ApiErrorAlert Result="loadResult" OnRetry="LoadAsync" />
+    @if (loadResult.Status == ApiStatus.NotFound)
+    {
+        <a class="btn btn-secondary" href="/notes">Go to my notes</a>
+    }
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="SaveAsync" FormName="note-editor" class="panel stack" novalidate>
+        <DataAnnotationsValidator />
+        <ApiErrorAlert Result="saveResult" />
+
+        <div class="field">
+            <label for="note-title">Title</label>
+            <InputText id="note-title" @bind-Value="model.Title" maxlength="@NoteLimits.TitleMaxLength" autocomplete="off" aria-describedby="note-title-error" />
+            <ValidationMessage For="() => model.Title" id="note-title-error" class="field-error" />
+            <ServerError Errors="saveResult?.Errors" Field="Title" />
+        </div>
+
+        <div class="field">
+            <label for="note-content">Content</label>
+            <InputTextArea id="note-content" @bind-Value="model.Content" rows="10" maxlength="@NoteLimits.ContentMaxLength" aria-describedby="note-content-hint note-content-error" />
+            <span id="note-content-hint" class="hint">Up to @NoteLimits.ContentMaxLength.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) characters.</span>
+            <ValidationMessage For="() => model.Content" id="note-content-error" class="field-error" />
+            <ServerError Errors="saveResult?.Errors" Field="Content" />
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" disabled="@busy">@(busy ? "Saving…" : "Save")</button>
+            @if (!IsNew)
+            {
+                <button type="button" class="btn btn-secondary" disabled="@busy" @onclick="ToggleArchiveAsync">
+                    @(model.IsArchived ? "Restore" : "Archive")
+                </button>
+                <button type="button" class="btn btn-danger-outline" disabled="@busy" @onclick="DeleteAsync">Delete</button>
+            }
+        </div>
+    </EditForm>
+
+    @if (loaded is not null)
+    {
+        <p class="muted small">Created @Format(loaded.CreatedAt) · Last updated @Format(loaded.UpdatedAt)</p>
+    }
+}
+
+<ConfirmDialog @ref="confirm" Title="Delete note?" Text="This note will be deleted permanently. This cannot be undone." ConfirmLabel="Delete permanently" />
+
+@code {
+    private readonly UpdateNoteRequest model = new();
+    private ApiResult<NoteDetails>? loadResult;
+    private ApiResult<NoteDetails>? saveResult;
+    private NoteDetails? loaded;
+    private ConfirmDialog confirm = default!;
+    private bool busy;
+
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool IsNew => Id is null;
+
+    protected override Task OnParametersSetAsync() => IsNew ? Task.CompletedTask : LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loadResult = null;
+        loadResult = await Api.GetNoteAsync(Id!.Value);
+        if (loadResult.Succeeded)
+        {
+            Apply(loadResult.Value!);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        saveResult = IsNew
+            ? await Api.CreateNoteAsync(new CreateNoteRequest { Title = model.Title, Content = model.Content })
+            : await Api.UpdateNoteAsync(Id!.Value, model);
+        busy = false;
+
+        if (saveResult.Succeeded)
+        {
+            Toasts.Show(IsNew ? "Note created." : "Note saved.");
+            if (IsNew)
+            {
+                Navigation.NavigateTo($"/notes/{saveResult.Value!.Id}");
+                return;
+            }
+
+            Apply(saveResult.Value!);
+        }
+    }
+
+    private async Task ToggleArchiveAsync()
+    {
+        busy = true;
+        var request = new UpdateNoteRequest { Title = loaded!.Title, Content = loaded.Content, IsArchived = !loaded.IsArchived };
+        saveResult = await Api.UpdateNoteAsync(Id!.Value, request);
+        busy = false;
+
+        if (saveResult.Succeeded)
+        {
+            Toasts.Show(saveResult.Value!.IsArchived ? "Note archived." : "Note restored.");
+            Navigation.NavigateTo(saveResult.Value.IsArchived ? "/archive" : "/notes");
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (!await confirm.AskAsync())
+        {
+            return;
+        }
+
+        busy = true;
+        var result = await Api.DeleteNoteAsync(Id!.Value);
+        busy = false;
+        if (result.Succeeded)
+        {
+            Toasts.Show("Note deleted.");
+            Navigation.NavigateTo(model.IsArchived ? "/archive" : "/notes");
+        }
+        else
+        {
+            saveResult = new ApiResult<NoteDetails>(result.Status);
+        }
+    }
+
+    private void Apply(NoteDetails note)
+    {
+        loaded = note;
+        model.Title = note.Title;
+        model.Content = note.Content;
+        model.IsArchived = note.IsArchived;
+    }
+
+    private static string Format(DateTimeOffset value) =>
+        value.ToLocalTime().ToString("d MMM yyyy, HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+}
