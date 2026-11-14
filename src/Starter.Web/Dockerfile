@@ -2,7 +2,7 @@
 # Multi-stage build: the SDK image builds and publishes, the small ASP.NET Core runtime image runs the app.
 # Build from the repository root:  docker build -f src/Starter.Web/Dockerfile -t starter-web .
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src
 
 COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
