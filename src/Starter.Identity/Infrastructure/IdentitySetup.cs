@@ -20,7 +20,7 @@ internal static class IdentitySetup
         builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
                 // Length matters more than composition rules (NIST SP 800-63B).
-                options.Password.RequiredLength = 12;
+                options.Password.RequiredLength = ApplicationUser.PasswordMinLength;
                 options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireUppercase = false;

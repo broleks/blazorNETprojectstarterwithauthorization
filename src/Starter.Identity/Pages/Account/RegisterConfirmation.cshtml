@@ -7,4 +7,5 @@
     <h1 id="page-title">Check your email</h1>
     <p>We sent a confirmation link to the email address you entered. Open it to activate your account.</p>
     <p class="muted">Didn't get the email? Check your spam folder or <a asp-page="./ResendEmailConfirmation" asp-route-returnUrl="@Model.ReturnUrl">send it again</a>.</p>
+    <partial name="_LocalInboxHint" />
 </section>

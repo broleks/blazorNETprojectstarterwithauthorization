@@ -9,7 +9,7 @@ This page lists the protections built into the starter, where they live, and wha
 | Control | Implementation |
 | --- | --- |
 | Password storage | ASP.NET Core Identity (PBKDF2 with per-user salt) |
-| Password policy | At least 12 characters, at least 4 different characters, no composition rules (NIST SP 800-63B) |
+| Password policy | At least 8 characters (`ApplicationUser.PasswordMinLength`), at least 4 different characters, no composition rules (NIST SP 800-63B) |
 | Brute force | Lockout after 5 failed attempts for 15 minutes; per-IP limit on account form posts (20/min by default) |
 | Email confirmation | Required before sign-in; links only sent by email, never shown on a page; links expire after 4 hours |
 | Account enumeration | Same response for unknown/known emails on sign-in, registration (the owner gets an email instead), reset and resend |

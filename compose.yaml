@@ -147,6 +147,7 @@ services:
       Email__Port: "1025"
       Email__Security: None
       Email__FromAddress: no-reply@starter.local
+      Email__LocalInboxUrl: http://localhost:8025
       RateLimiting__AccountPostsPerMinute: ${ACCOUNT_POSTS_PER_MINUTE:-20}
 
   identity:

@@ -8,6 +8,12 @@ public sealed class ApplicationUser : IdentityUser
 {
     public const int DisplayNameMaxLength = 100;
 
+    /// <summary>
+    /// Minimum password length, used by Identity and by every password form. Length matters more than
+    /// composition rules (NIST SP 800-63B recommends at least 8 characters); raise it here if needed.
+    /// </summary>
+    public const int PasswordMinLength = 8;
+
     /// <summary>Name shown in the UI. Independent of the email address and not unique.</summary>
     [MaxLength(DisplayNameMaxLength)]
     public required string DisplayName { get; set; }

@@ -14,7 +14,7 @@ public sealed class SetPasswordModel(
 {
     [BindProperty]
     [Required(ErrorMessage = "Enter a new password.")]
-    [StringLength(128, MinimumLength = 12, ErrorMessage = "The password must be at least {2} characters long.")]
+    [StringLength(128, MinimumLength = ApplicationUser.PasswordMinLength, ErrorMessage = "The password must be at least {2} characters long.")]
     [DataType(DataType.Password)]
     [Display(Name = "New password")]
     public string NewPassword { get; set; } = string.Empty;

@@ -24,6 +24,7 @@ environment variables (`Section__Key`) and, in Azure, App Service settings with 
 | `Email:Security` | `StartTls` | | `None` only for local Mailpit |
 | `Email:UserName` / `Password` | | yes | |
 | `Email:MaxPerRecipientPerHour` | `5` | | |
+| `Email:LocalInboxUrl` | `http://localhost:8025` | | Local only: account pages show a link to the test inbox. Leave empty in production |
 | `RateLimiting:AccountPostsPerMinute` | `20` | | Per client IP |
 | `RateLimiting:TokenRequestsPerMinute` | `600` | | Per client IP (the web server is one IP) |
 | `Database:MigrateOnStartup` | `true` | | Honoured in Development only |
@@ -53,6 +54,6 @@ see the original scheme (https) and client IP. Restrict `AllowedHosts` to your h
 
 ## Email
 
-Locally all mail goes to Mailpit. In production use any SMTP relay with TLS, for example
+Locally all mail goes to Mailpit (http://localhost:8025), **not** to the real address. To deliver real emails during development, point `Email:Host` etc. at a real SMTP account (for Gmail: `smtp.gmail.com`, port 587, `StartTls`, your address as `Email:UserName` and an app password as `Email:Password`, both in user secrets) and remove `Email:LocalInboxUrl`. In production use any SMTP relay with TLS, for example
 Azure Communication Services Email (`smtp.azurecomm.net`, port 587, StartTls), SendGrid or Microsoft 365.
 If sending fails, the account action still succeeds, the error is logged, and the user can request the email again.

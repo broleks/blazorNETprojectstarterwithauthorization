@@ -28,7 +28,7 @@ public sealed class RegisterModel(
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Enter a password.")]
-        [StringLength(128, MinimumLength = 12, ErrorMessage = "The password must be at least {2} characters long.")]
+        [StringLength(128, MinimumLength = ApplicationUser.PasswordMinLength, ErrorMessage = "The password must be at least {2} characters long.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 

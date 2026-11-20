@@ -45,6 +45,31 @@ public sealed class AccountPagesTests(StarterFixture fixture) : ApiTestBase(fixt
         Assert.StartsWith(StarterFixture.IdentityUrl, sent.Link, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("1234567", false)]
+    [InlineData("12345678", true)]
+    public async Task Registration_requires_a_password_of_at_least_8_characters(string password, bool accepted)
+    {
+        using var browser = Fixture.Identity.CreateBrowser();
+        var form = await browser.GetStringAsync("/Account/Register", Cancellation);
+
+        using var response = await browser.PostAsync("/Account/Register", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Input.DisplayName"] = "Short Password",
+            ["Input.Email"] = $"pw-{Guid.NewGuid():N}@example.test",
+            ["Input.Password"] = password,
+            ["Input.ConfirmPassword"] = password,
+            ["__RequestVerificationToken"] = OAuthTestClient.AntiforgeryToken(form),
+        }), Cancellation);
+
+        // Accepted: redirect to "check your email". Rejected: the form is shown again with the error.
+        Assert.Equal(accepted ? HttpStatusCode.Redirect : HttpStatusCode.OK, response.StatusCode);
+        if (!accepted)
+        {
+            Assert.Contains("at least 8 characters", await response.Content.ReadAsStringAsync(Cancellation), StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public async Task Registering_an_existing_email_looks_the_same_and_notifies_the_owner()
     {

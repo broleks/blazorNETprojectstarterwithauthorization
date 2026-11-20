@@ -1,0 +1,10 @@
+@inject IConfiguration Configuration
+@* Shown only when Email:LocalInboxUrl is configured (local development). Emails then go to the test inbox,
+   not to the real address. Production configuration does not set it. *@
+@if (Configuration["Email:LocalInboxUrl"] is { Length: > 0 } inbox)
+{
+    <p class="alert alert-success" data-testid="local-inbox-hint">
+        Local development: emails are not delivered to real inboxes. Open the test inbox at
+        <a href="@inbox" target="_blank" rel="noopener">@inbox</a>.
+    </p>
+}

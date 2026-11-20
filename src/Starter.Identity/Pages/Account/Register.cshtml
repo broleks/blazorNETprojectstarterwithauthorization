@@ -23,7 +23,7 @@
         <div class="field">
             <label asp-for="Input.Password">Password</label>
             <input asp-for="Input.Password" autocomplete="new-password" required aria-describedby="password-hint" />
-            <span id="password-hint" class="hint">At least 12 characters. A short sentence works well.</span>
+            <span id="password-hint" class="hint">At least @ApplicationUser.PasswordMinLength characters. A short sentence works well.</span>
             <span asp-validation-for="Input.Password" class="field-error"></span>
         </div>
         <div class="field">
