@@ -53,9 +53,19 @@ public sealed class RegisterModel(
         var existing = await userManager.FindByEmailAsync(Input.Email);
         if (existing is not null)
         {
-            // Do not reveal on the page that the email is registered: the owner gets an email instead.
-            await emailSender.SendAccountExistsNoticeAsync(existing.Email!, existing.DisplayName,
-                EmailLink("/Account/Login", new { returnUrl = ReturnUrl }), HttpContext.RequestAborted);
+            // The page never reveals that the email is registered; the owner learns it by email instead.
+            if (existing.EmailConfirmed)
+            {
+                await emailSender.SendAccountExistsNoticeAsync(existing.Email!, existing.DisplayName,
+                    EmailLink("/Account/Login", new { returnUrl = ReturnUrl }), HttpContext.RequestAborted);
+            }
+            else
+            {
+                // Registered earlier but never confirmed (e.g. the first email was lost): send a fresh confirmation
+                // link. The existing account and its password are not changed - only the inbox owner can confirm it.
+                await SendConfirmationEmailAsync(userManager, emailSender, existing);
+            }
+
             return RedirectToPage("./RegisterConfirmation", new { returnUrl = ReturnUrl });
         }
 

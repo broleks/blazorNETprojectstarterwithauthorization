@@ -28,18 +28,23 @@ internal sealed class SmtpAccountEmailSender(
 
     public Task SendConfirmationLinkAsync(string email, string displayName, string link, CancellationToken cancellationToken = default) =>
         SendAsync(email, "Confirm your email address", displayName,
-            "Please confirm your email address to finish creating your account.", "Confirm email address", link, cancellationToken);
+            "Please confirm your email address to finish creating your account. If you registered more than once, " +
+            "sign in with the password you chose first, or use \"Forgot your password?\" after confirming.",
+            "Confirm email address", link, ExpiryNote, cancellationToken);
 
     public Task SendPasswordResetLinkAsync(string email, string displayName, string link, CancellationToken cancellationToken = default) =>
         SendAsync(email, "Reset your password", displayName,
-            "We received a request to reset your password. If it was not you, you can ignore this email.", "Reset password", link, cancellationToken);
+            "We received a request to reset your password. If it was not you, you can ignore this email.", "Reset password", link, ExpiryNote, cancellationToken);
 
     public Task SendAccountExistsNoticeAsync(string email, string displayName, string signInLink, CancellationToken cancellationToken = default) =>
         SendAsync(email, "You already have an account", displayName,
             "Someone tried to create a new account with this email address. You already have an account, so you can sign in or reset your password instead. If it was not you, you can ignore this email.",
-            "Sign in", signInLink, cancellationToken);
+            "Sign in", signInLink, footer: null, cancellationToken);
 
-    private async Task SendAsync(string to, string subject, string displayName, string intro, string action, string link, CancellationToken cancellationToken)
+    private const string ExpiryNote = "This link expires in a few hours.";
+
+    private async Task SendAsync(string to, string subject, string displayName, string intro, string action, string link,
+        string? footer, CancellationToken cancellationToken)
     {
         if (!TryReserveQuota(to))
         {
@@ -57,12 +62,12 @@ internal sealed class SmtpAccountEmailSender(
         var encoder = HtmlEncoder.Default;
         message.Body = new BodyBuilder
         {
-            TextBody = $"Hi {displayName},\n\n{intro}\n\n{action}: {link}\n\nThis link expires in a few hours.",
+            TextBody = $"Hi {displayName},\n\n{intro}\n\n{action}: {link}" + (footer is null ? string.Empty : $"\n\n{footer}"),
             HtmlBody = $"""
                 <p>Hi {encoder.Encode(displayName)},</p>
                 <p>{encoder.Encode(intro)}</p>
                 <p><a href="{encoder.Encode(link)}">{encoder.Encode(action)}</a></p>
-                <p>This link expires in a few hours.</p>
+                {(footer is null ? string.Empty : $"<p>{encoder.Encode(footer)}</p>")}
                 """,
         }.ToMessageBody();
 

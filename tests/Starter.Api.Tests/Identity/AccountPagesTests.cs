@@ -92,6 +92,29 @@ public sealed class AccountPagesTests(StarterFixture fixture) : ApiTestBase(fixt
     }
 
     [Fact]
+    public async Task Registering_again_with_an_unconfirmed_email_sends_a_new_confirmation_link()
+    {
+        var email = $"unconfirmed-{Guid.NewGuid():N}@example.test";
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            using var browser = Fixture.Identity.CreateBrowser();
+            var form = await browser.GetStringAsync("/Account/Register", Cancellation);
+            using var response = await browser.PostAsync("/Account/Register", new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Input.DisplayName"] = "Twice",
+                ["Input.Email"] = email,
+                ["Input.Password"] = "a long enough password",
+                ["Input.ConfirmPassword"] = "a long enough password",
+                ["__RequestVerificationToken"] = OAuthTestClient.AntiforgeryToken(form),
+            }), Cancellation);
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        }
+
+        var sent = Fixture.Emails.Sent.Where(e => e.To == email).Select(e => e.Subject).ToList();
+        Assert.Equal(["confirm", "confirm"], sent);
+    }
+
+    [Fact]
     public async Task Wrong_password_shows_a_generic_error()
     {
         var user = await Fixture.CreateUserAsync();
