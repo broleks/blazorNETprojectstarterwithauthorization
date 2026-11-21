@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using OpenIddict.Abstractions;
@@ -51,6 +52,39 @@ internal static class DatabaseSetup
 
         await using var scope = services.CreateAsyncScope();
         await SeedClientsAsync(scope.ServiceProvider, configuration, logger, cancellationToken);
+        await SeedAdministratorsAsync(scope.ServiceProvider, configuration, logger);
+    }
+
+    /// <summary>
+    /// Creates the Admin role and gives it to the accounts listed in <c>Admin:InitialAdmins</c> (email addresses).
+    /// Only existing accounts with a confirmed email are promoted; nothing is ever removed here. Later
+    /// administrators are appointed on the Administration pages.
+    /// </summary>
+    private static async Task SeedAdministratorsAsync(IServiceProvider services, IConfiguration configuration, ILogger logger)
+    {
+        var roles = services.GetRequiredService<RoleManager<IdentityRole>>();
+        if (!await roles.RoleExistsAsync(ApiConstants.AdminRole))
+        {
+            await roles.CreateAsync(new IdentityRole(ApiConstants.AdminRole));
+        }
+
+        var users = services.GetRequiredService<UserManager<ApplicationUser>>();
+        foreach (var email in (configuration.GetSection("Admin:InitialAdmins").Get<string[]>() ?? []).Where(e => !string.IsNullOrWhiteSpace(e)))
+        {
+            var user = await users.FindByEmailAsync(email);
+            if (user is not { EmailConfirmed: true })
+            {
+                logger.LogWarning("Initial administrator {Email} not found or email not confirmed; skipped", ActivityLogExtensions.MaskEmail(email));
+                continue;
+            }
+
+            if (!await users.IsInRoleAsync(user, ApiConstants.AdminRole))
+            {
+                await users.AddToRoleAsync(user, ApiConstants.AdminRole);
+                logger.LogActivity(LogCategories.Security, "admin.role_granted", EventOutcome.Success,
+                    new Dictionary<string, object?> { ["GrantedBy"] = "configuration" }, user.Id);
+            }
+        }
     }
 
     private static async Task SeedClientsAsync(IServiceProvider services, IConfiguration configuration, ILogger logger, CancellationToken cancellationToken)
@@ -78,6 +112,28 @@ internal static class DatabaseSetup
 
     private static OpenIddictApplicationDescriptor CreateDescriptor(string clientId, ClientSettings client)
     {
+        if (client.Kind == ClientKind.Service)
+        {
+            if (string.IsNullOrWhiteSpace(client.ClientSecret))
+            {
+                throw new InvalidOperationException($"Service client '{clientId}' needs a ClientSecret.");
+            }
+
+            return new OpenIddictApplicationDescriptor
+            {
+                ClientId = clientId,
+                ClientSecret = client.ClientSecret,
+                ClientType = ClientTypes.Confidential,
+                DisplayName = client.DisplayName,
+                Permissions =
+                {
+                    Permissions.Endpoints.Token,
+                    Permissions.GrantTypes.ClientCredentials,
+                    Permissions.Prefixes.Scope + ApiConstants.AccountsScope,
+                },
+            };
+        }
+
         var isConfidential = !string.IsNullOrWhiteSpace(client.ClientSecret);
         var descriptor = new OpenIddictApplicationDescriptor
         {

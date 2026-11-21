@@ -16,6 +16,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
     public const string Schema = "identity";
 
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+    public DbSet<PendingDataDeletion> PendingDataDeletions => Set<PendingDataDeletion>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -25,6 +26,13 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
         builder.Entity<ApplicationUser>(user =>
         {
             user.Property(u => u.DisplayName).HasMaxLength(ApplicationUser.DisplayNameMaxLength);
+        });
+
+        builder.Entity<PendingDataDeletion>(deletion =>
+        {
+            deletion.HasKey(d => d.UserId);
+            deletion.Property(d => d.UserId).HasMaxLength(450);
+            deletion.Property(d => d.LastError).HasMaxLength(1000);
         });
 
         // Registers the OpenIddict entities (applications, authorizations, scopes, tokens).

@@ -1,0 +1,52 @@
+@page
+@model Starter.Identity.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = "Users";
+}
+<section class="card admin-card" aria-labelledby="page-title">
+    <h1 id="page-title">Users</h1>
+    <p class="muted">Administration · <a asp-page="/Account/Manage/Index">Back to your account</a></p>
+    <partial name="_Alerts" model="((string?)null, Model.StatusMessage)" />
+
+    <form method="get" class="search-form" role="search">
+        <label for="search" class="visually-hidden">Search users</label>
+        <input id="search" name="search" value="@Model.Search" placeholder="Search by email or name" />
+        <button type="submit" class="btn btn-secondary">Search</button>
+    </form>
+
+    <p class="muted small">@Model.TotalCount user(s)</p>
+    <div class="table-wrap">
+        <table class="data-table" data-testid="users-table">
+            <thead>
+                <tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Created</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td><a asp-page="./Details" asp-route-id="@user.Id">@user.DisplayName</a></td>
+                        <td>@user.Email</td>
+                        <td>@user.CreatedAt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)</td>
+                        <td>
+                            @if (user.IsAdmin) { <span class="badge">Admin</span> }
+                            @if (user.IsLocked) { <span class="badge badge-danger">Locked</span> }
+                            @if (!user.EmailConfirmed) { <span class="badge">Unconfirmed</span> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <nav class="pager" aria-label="Pages">
+        @if (Model.PageNumber > 1)
+        {
+            <a class="btn btn-secondary btn-small" asp-route-search="@Model.Search" asp-route-p="@(Model.PageNumber - 1)">Previous</a>
+        }
+        <span>Page @Model.PageNumber</span>
+        @if (Model.HasNextPage)
+        {
+            <a class="btn btn-secondary btn-small" asp-route-search="@Model.Search" asp-route-p="@(Model.PageNumber + 1)">Next</a>
+        }
+    </nav>
+</section>

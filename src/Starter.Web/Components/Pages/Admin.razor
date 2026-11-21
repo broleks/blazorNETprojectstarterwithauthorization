@@ -1,0 +1,58 @@
+@page "/admin"
+@attribute [Authorize(Roles = ApiConstants.AdminRole)]
+@using Starter.Contracts.Admin
+@inject AdminApi Api
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+
+<PageTitle>Administration · Starter</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Administration</h1>
+        <p class="muted">Application-wide numbers. Administrators see totals, not other users' content.</p>
+    </div>
+    <a class="btn btn-primary" href="@UsersUrl" data-testid="manage-users">Manage users</a>
+</div>
+
+@if (result is null)
+{
+    <LoadingState Text="Loading statistics…" />
+}
+else if (!result.Succeeded)
+{
+    <ApiErrorAlert Result="result" OnRetry="LoadAsync" />
+}
+else
+{
+    var stats = result.Value!;
+    <section class="stats" aria-label="Statistics">
+        <div class="stat-card"><span class="stat-value" data-testid="admin-users-with-notes">@stats.UsersWithNotes</span><span class="stat-label">Users with notes</span></div>
+        <div class="stat-card"><span class="stat-value" data-testid="admin-total-notes">@stats.TotalNotes</span><span class="stat-label">Notes in total</span></div>
+        <div class="stat-card"><span class="stat-value">@stats.ArchivedNotes</span><span class="stat-label">Archived notes</span></div>
+        <div class="stat-card"><span class="stat-value">@stats.NotesCreatedLast7Days</span><span class="stat-label">Created in the last 7 days</span></div>
+        <div class="stat-card"><span class="stat-value">@stats.NotesUpdatedLast24Hours</span><span class="stat-label">Updated in the last 24 hours</span></div>
+    </section>
+}
+
+@code {
+    private ApiResult<AdminStatsResponse>? result;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        result = null;
+        result = await Api.GetStatsAsync();
+    }
+
+    /// <summary>User management lives on the identity server, where the accounts are.</summary>
+    private string UsersUrl
+    {
+        get
+        {
+            var identity = new Uri(Configuration["Authentication:Authority"]!);
+            return new Uri(identity, "Admin/Users").ToString();
+        }
+    }
+}

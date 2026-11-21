@@ -33,6 +33,7 @@ az deployment group create -g rg-starter-prod -f deploy/azure/main.bicep -p @dep
 In the Key Vault from the deployment outputs:
 
 - `web-client-secret` — random 32+ bytes; used by both identity and web.
+- `service-client-secret` — random 32+ bytes; the identity server's service client (account deletion/export).
 - `smtp-password` — if the SMTP relay needs credentials (`smtpUserName` parameter).
 - `google-client-id`, `google-client-secret` — then redeploy with `enableGoogleSignIn=true`.
 - Token certificates: create two certificates in Key Vault (e.g. `openiddict-signing`, `openiddict-encryption`,

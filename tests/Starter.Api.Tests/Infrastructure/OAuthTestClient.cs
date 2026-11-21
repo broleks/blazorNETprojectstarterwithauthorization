@@ -72,6 +72,37 @@ public static partial class OAuthTestClient
         });
     }
 
+    /// <summary>A token for the identity server's own service client (client credentials, accounts scope).</summary>
+    public static async Task<string> ServiceTokenAsync(IdentityFactory identity, string scope = "starter_api.accounts")
+    {
+        using var client = identity.CreateClient();
+        using var response = await client.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "client_credentials",
+            ["client_id"] = StarterFixture.ServiceClientId,
+            ["client_secret"] = StarterFixture.ServiceClientSecret,
+            ["scope"] = scope,
+        }));
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode, $"Service token request failed: {body}");
+        using var json = JsonDocument.Parse(body);
+        return json.RootElement.GetProperty("access_token").GetString()!;
+    }
+
+    /// <summary>Signs a browser in to the identity server itself (account pages), without an OAuth client.</summary>
+    public static async Task SignInToAccountPagesAsync(HttpClient browser, TestUser user)
+    {
+        var form = await browser.GetStringAsync("/Account/Login");
+        using var response = await browser.PostAsync("/Account/Login", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Input.Email"] = user.Email,
+            ["Input.Password"] = user.Password,
+            ["ReturnUrl"] = "/Account/Manage",
+            ["__RequestVerificationToken"] = AntiforgeryToken(form),
+        }));
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+    }
+
     public static Task<TokenSet> RefreshAsync(IdentityFactory identity, string refreshToken) =>
         RequestTokensAsync(identity, new Dictionary<string, string>
         {

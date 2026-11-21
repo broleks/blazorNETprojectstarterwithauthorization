@@ -32,6 +32,7 @@ internal static class TestDataCleanup
             DELETE FROM [web].Sessions WHERE UserId IN (SELECT Id FROM @users);
             DELETE FROM [identity].OpenIddictTokens WHERE Subject IN (SELECT Id FROM @users);
             DELETE FROM [identity].OpenIddictAuthorizations WHERE Subject IN (SELECT Id FROM @users);
+            DELETE FROM [identity].PendingDataDeletions WHERE UserId IN (SELECT Id FROM @users);
             DELETE FROM [identity].AspNetUsers WHERE Id IN (SELECT Id FROM @users);
             """;
         command.Parameters.AddWithValue("@pattern", "%@" + E2ESettings.EmailDomain.ToUpperInvariant());

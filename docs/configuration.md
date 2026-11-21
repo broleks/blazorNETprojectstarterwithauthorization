@@ -20,6 +20,9 @@ environment variables (`Section__Key`) and, in Azure, App Service settings with 
 | `OpenIddict:Clients:<clientId>:ClientSecret` | | yes | Empty = public client (mobile) |
 | `OpenIddict:Clients:<clientId>:RedirectUris:N` | `https://app.example.com/signin-oidc` | | Exact match |
 | `OpenIddict:Clients:<clientId>:PostLogoutRedirectUris:N` | `https://app.example.com/signout-callback-oidc` | | |
+| `OpenIddict:Clients:starter-identity-service:ClientSecret` | | yes | Service client used for account deletion/export (`Kind: Service`) |
+| `Api:BaseUrl` | `https://api.example.com/` | | The API, for account deletion and data export |
+| `Admin:InitialAdmins:N` | `you@example.com` | | Existing, confirmed accounts promoted to Admin by the migration step |
 | `Email:FromAddress`, `FromName`, `Host`, `Port` | | | SMTP relay |
 | `Email:Security` | `StartTls` | | `None` only for local Mailpit |
 | `Email:UserName` / `Password` | | yes | |

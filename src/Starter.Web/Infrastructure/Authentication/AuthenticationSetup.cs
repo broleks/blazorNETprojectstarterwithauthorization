@@ -58,6 +58,7 @@ internal static class AuthenticationSetup
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
                 options.SlidingExpiration = true;
+                options.AccessDeniedPath = "/access-denied";
             })
             .AddOpenIdConnect(options =>
             {
@@ -72,6 +73,9 @@ internal static class AuthenticationSetup
                 options.MapInboundClaims = false;
                 options.GetClaimsFromUserInfoEndpoint = false;
                 options.TokenValidationParameters.NameClaimType = "name";
+                // Roles from the id token (e.g. Admin) drive [Authorize(Roles = ...)] and the menu. The API checks
+                // the role again from its own access token, so the UI is never the only protection.
+                options.TokenValidationParameters.RoleClaimType = "role";
 
                 options.Scope.Clear();
                 options.Scope.Add("openid");

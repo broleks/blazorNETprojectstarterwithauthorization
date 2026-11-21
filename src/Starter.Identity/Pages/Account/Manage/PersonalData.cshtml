@@ -1,0 +1,21 @@
+@page
+@model Starter.Identity.Pages.Account.Manage.PersonalDataModel
+@{
+    ViewData["Title"] = "Your data";
+}
+<section class="card manage-card" aria-labelledby="page-title">
+    <h1 id="page-title">Your account</h1>
+    <partial name="_ManageNav" model="Model" />
+    <partial name="_Alerts" model="(Model.ErrorMessage, Model.StatusMessage)" />
+
+    <h2>Download your data</h2>
+    <p>Get a copy of everything we store about you: your account details and the data you saved in the app, as a JSON file.</p>
+    <form asp-page-handler="Download" method="post">
+        <input type="hidden" asp-for="ReturnUrl" />
+        <button type="submit" class="btn btn-secondary" data-testid="download-data">Download my data</button>
+    </form>
+
+    <h2 class="section-gap">Delete your account</h2>
+    <p>Deleting your account removes your profile and all data you saved in the app. This cannot be undone.</p>
+    <a class="btn btn-danger-outline" asp-page="./DeleteAccount" asp-route-returnUrl="@Model.ReturnUrl">Delete my account</a>
+</section>

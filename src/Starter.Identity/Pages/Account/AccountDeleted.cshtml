@@ -1,0 +1,13 @@
+@page
+@model Starter.Identity.Pages.Account.AccountDeletedModel
+@{
+    ViewData["Title"] = "Account deleted";
+}
+<section class="card auth-card" aria-labelledby="page-title">
+    <h1 id="page-title">Your account has been deleted</h1>
+    <p role="status">Your account and your data have been deleted and you have been signed out. We sent a confirmation email.</p>
+    @if (Model.AppUrl is not null)
+    {
+        <a class="btn btn-secondary btn-block" href="@Model.AppUrl">Go to the app</a>
+    }
+</section>

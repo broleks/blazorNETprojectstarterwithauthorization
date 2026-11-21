@@ -26,6 +26,18 @@
             </ul>
         </nav>
 
+        <AuthorizeView Roles="@ApiConstants.AdminRole" Context="adminContext">
+            <ul class="nav-list">
+                <li>
+                    <a href="/admin" class="nav-link @(IsCurrent(AdminItem) ? "active" : null)"
+                       aria-current="@(IsCurrent(AdminItem) ? "page" : null)" @onclick="OnNavigate" data-testid="nav-admin">
+                        <span class="nav-icon" aria-hidden="true">★</span>
+                        Admin
+                    </a>
+                </li>
+            </ul>
+        </AuthorizeView>
+
         <form action="authentication/logout" method="post" class="signout-form">
             <AntiforgeryToken />
             <button type="submit" class="btn btn-secondary btn-block">Sign out</button>
@@ -48,6 +60,8 @@
         new("/archive", "Archive", "▤"),
         new("/account", "Account", "◉"),
     ];
+
+    private static readonly NavItem AdminItem = new("/admin", "Admin", "★");
 
     [Parameter] public EventCallback OnNavigate { get; set; }
 

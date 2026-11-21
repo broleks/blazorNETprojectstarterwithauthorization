@@ -31,6 +31,8 @@ public sealed class StarterFixture : IAsyncLifetime
     public const string WebRedirectUri = "https://web.test/signin-oidc";
     public const string ClientId = "starter-web";
     public const string ClientSecret = "integration-test-client-secret";
+    public const string ServiceClientId = "starter-identity-service";
+    public const string ServiceClientSecret = "integration-test-service-secret";
     public const string CertificatePassword = "integration-tests";
 
     private readonly string certificateFolder = Directory.CreateTempSubdirectory("starter-tests-").FullName;
@@ -84,6 +86,9 @@ public sealed class StarterFixture : IAsyncLifetime
         ["OpenIddict:Clients:starter-web:ClientSecret"] = ClientSecret,
         ["OpenIddict:Clients:starter-web:RedirectUris:0"] = WebRedirectUri,
         ["OpenIddict:Clients:starter-web:PostLogoutRedirectUris:0"] = "https://web.test/signout-callback-oidc",
+        ["OpenIddict:Clients:starter-identity-service:Kind"] = "Service",
+        ["OpenIddict:Clients:starter-identity-service:ClientSecret"] = ServiceClientSecret,
+        ["Api:BaseUrl"] = ApiUrl,
         // Every test signs in through the login form; the per-IP limit is tested separately.
         ["RateLimiting:AccountPostsPerMinute"] = "10000",
     };
@@ -185,6 +190,12 @@ public sealed class IdentityFactory : WebApplicationFactory<ApplicationUser>
         builder.ConfigureServices(services =>
         {
             services.AddSingleton<IAccountEmailSender>(fixture.Emails);
+
+            // The identity server's service client talks to the in-memory API, and gets its token from itself.
+            services.AddHttpClient(Starter.Identity.Infrastructure.Accounts.ApiServiceClient.HttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => fixture.Api.Server.CreateHandler());
+            services.AddHttpClient(Starter.Identity.Infrastructure.Accounts.ApiServiceClient.HttpClientName + ".Token")
+                .ConfigurePrimaryHttpMessageHandler(() => Server.CreateHandler());
         });
     }
 
@@ -289,6 +300,8 @@ public sealed class CapturingEmailSender : IAccountEmailSender
     public Task SendPasswordResetLinkAsync(string email, string displayName, string link, CancellationToken cancellationToken = default) => Add(email, "reset", link);
 
     public Task SendAccountExistsNoticeAsync(string email, string displayName, string signInLink, CancellationToken cancellationToken = default) => Add(email, "exists", signInLink);
+
+    public Task SendAccountDeletedNoticeAsync(string email, string displayName, CancellationToken cancellationToken = default) => Add(email, "deleted", string.Empty);
 
     private Task Add(string to, string subject, string link)
     {

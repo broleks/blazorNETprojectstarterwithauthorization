@@ -21,6 +21,15 @@ This page lists the protections built into the starter, where they live, and wha
 | Open redirects | Return URLs must be local or an origin of a registered client redirect URI |
 | CSRF | Antiforgery tokens on every form (Razor Pages default); end-session without a valid `id_token_hint` requires a confirmation form with antiforgery |
 
+### Account data and administration
+
+| Control | Implementation |
+| --- | --- |
+| Data export | Account + every API feature via `IUserDataHandler`; no hashes, stamps or tokens |
+| Account deletion | Password (or email) confirmation; tokens revoked; API data deleted by a retrying background job, repeated until no pre-deletion access token can be valid |
+| Service channel | Identity → API with client credentials, scope `starter_api.accounts`; internal endpoints refuse user tokens; the service token cannot call the normal API |
+| Administrators | Role in tokens, `AdminPolicy` in the API, role-protected pages; aggregates only (no other users' content); self-changes blocked; all actions logged |
+
 ### Tokens (OpenIddict)
 
 | Control | Implementation |
@@ -77,7 +86,8 @@ This page lists the protections built into the starter, where they live, and wha
   reuse leeway.
 - **Data Protection keys** are stored in SQL without additional encryption at rest beyond the database's own
   (TDE in Azure SQL). Add `ProtectKeysWithAzureKeyVault` for defence in depth.
-- **Not included:** two-factor authentication, account deletion/export, admin panel, roles, CAPTCHA, audit log.
+- **Not included:** two-factor authentication, fine-grained permissions, CAPTCHA. The activity log covers security
+  and admin events but is not a tamper-proof audit trail.
 - **Google**: the browser part of the Google flow cannot run in normal CI; it is verified manually
   ([google-sign-in.md](google-sign-in.md)). The callback handling, cancellation and the "no automatic linking"
   rule are covered by integration tests where possible.

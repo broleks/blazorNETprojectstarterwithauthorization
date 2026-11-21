@@ -1,0 +1,37 @@
+@page
+@model Starter.Identity.Pages.Account.Manage.DeleteAccountModel
+@{
+    ViewData["Title"] = "Delete account";
+}
+<section class="card manage-card" aria-labelledby="page-title">
+    <h1 id="page-title">Delete your account</h1>
+    <partial name="_Alerts" model="(Model.ErrorMessage, (string?)null)" />
+
+    <div class="alert alert-error" role="note">
+        <p><strong>This cannot be undone.</strong> Your profile, your sign-in methods and all data you saved in the app
+        will be deleted, and you will be signed out everywhere.</p>
+    </div>
+    <p>Want a copy first? <a asp-page="./PersonalData" asp-route-returnUrl="@Model.ReturnUrl">Download your data</a>.</p>
+
+    <form method="post" novalidate class="stack">
+        <input type="hidden" asp-for="ReturnUrl" />
+        @if (Model.RequirePassword)
+        {
+            <div class="field">
+                <label asp-for="Password">Enter your password to confirm</label>
+                <input asp-for="Password" autocomplete="current-password" required />
+            </div>
+        }
+        else
+        {
+            <div class="field">
+                <label asp-for="ConfirmEmail">Type your email address to confirm</label>
+                <input asp-for="ConfirmEmail" type="email" autocomplete="off" required />
+            </div>
+        }
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Delete my account permanently</button>
+            <a class="btn btn-secondary" asp-page="./PersonalData" asp-route-returnUrl="@Model.ReturnUrl">Cancel</a>
+        </div>
+    </form>
+</section>

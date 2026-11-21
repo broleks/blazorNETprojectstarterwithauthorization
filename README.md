@@ -12,6 +12,7 @@ containers and tests are already in place.
 | API | ASP.NET Core minimal APIs, JWT validation, per-user data (`Starter.Api`) |
 | Data | EF Core, SQL Server locally, Azure SQL in production |
 | Local run | Docker Compose (SQL Server, Mailpit, optionally the apps) or `dotnet run` / Visual Studio |
+| GDPR and admin | Data export and immediate account deletion (identity + API data), role `Admin` with user management and an admin page |
 | Logging | One switchable activity log (errors, security, API calls, UI) as ECS JSON to files and/or Elasticsearch + Kibana (`Starter.Observability`) |
 | Tests | Integration tests with the real auth stack (`Starter.Api.Tests`), Playwright E2E (`Starter.E2E.Tests`) |
 | Delivery | Multi-stage Dockerfiles, GitHub Actions CI, Azure App Service + Azure SQL (Bicep) |
@@ -33,6 +34,7 @@ containers and tests are already in place.
   [extending the starter](docs/extending.md) ·
   [testing](docs/testing.md) ·
   [logging](docs/logging.md) ·
+  [account deletion, export and administrators](docs/accounts-and-admin.md) ·
   [Azure deployment](docs/azure-deployment.md) ·
   [maintenance and new apps](docs/maintenance.md)
 - UI style: [`design/STYLE-PROMPT.md`](design/STYLE-PROMPT.md)
@@ -185,6 +187,8 @@ sequenceDiagram
 | Token refresh for circuits | `src/Starter.Web/Infrastructure/Authentication/SessionTokenService.cs` |
 | Calling the API from components | `src/Starter.Web/Infrastructure/Api/ApiClient.cs`, `NotesApi.cs` |
 | Pages and layout | `src/Starter.Web/Components/**` |
+| Account deletion, export, service client | `src/Starter.Identity/Infrastructure/Accounts/`, `src/Starter.Api/Features/UserData/` |
+| Administration | `src/Starter.Identity/Pages/Admin/`, `src/Starter.Api/Features/Admin/`, `src/Starter.Web/Components/Pages/Admin.razor` |
 | Logging setup, categories, event helpers | `src/Starter.Observability/` (guide: [docs/logging.md](docs/logging.md)) |
 | Theme | `src/Starter.Ui/wwwroot/theme.css`, `src/Starter.Web/wwwroot/css/app.css` |
 
@@ -208,8 +212,8 @@ Reports, traces and options: [docs/testing.md](docs/testing.md).
 
 ## Status and limits
 
-The starter is verified locally in both variants (build, 69 integration tests, 15 Playwright tests, container
+The starter is verified locally in both variants (build, 80 integration tests, 18 Playwright tests, container
 images). The Azure template compiles but has not been deployed by the authors of this repository — treat
 [docs/azure-deployment.md](docs/azure-deployment.md) as a reviewed plan, not a tested release. Multi-instance
 operation is designed for (shared Data Protection keys and sessions in SQL) but not verified; see the scaling
-section there. Not included on purpose: admin panel, roles, two-factor authentication, account deletion.
+section there. Not included on purpose: fine-grained roles and permissions, two-factor authentication.

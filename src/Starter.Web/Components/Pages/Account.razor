@@ -43,6 +43,12 @@ else
             <a class="btn btn-secondary" href="@ManageUrl("Account/Manage/ExternalLogins")">Sign-in methods</a>
         </div>
     </section>
+
+    <section class="panel" aria-labelledby="data-title">
+        <h2 id="data-title">Your data</h2>
+        <p class="muted">Download a copy of everything stored about you, or delete your account and all its data.</p>
+        <a class="btn btn-secondary" href="@ManageUrl("Account/Manage/PersonalData")" data-testid="personal-data">Download or delete my data</a>
+    </section>
 }
 
 @code {

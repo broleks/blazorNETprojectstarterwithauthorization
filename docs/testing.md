@@ -21,7 +21,9 @@ dotnet test --project tests/Starter.Api.Tests
 - Negative cases the identity server never produces (expired token, wrong audience/issuer, missing scope, unknown
   key) use hand-minted JWTs, with a positive control that a correctly minted token is accepted.
 
-Covered: no/invalid/tampered/expired tokens, wrong audience or issuer, unknown signing key, missing scope (403),
+Covered: data export and account deletion (incl. API data removal and the GDPR handler coverage check), the service
+client and internal endpoints, the Admin role (API, admin pages, role revocation, lock/delete, initial administrators),
+no/invalid/tampered/expired tokens, wrong audience or issuer, unknown signing key, missing scope (403),
 id token used as access token, foreign notes (read/update/delete → 404, data unchanged), owner injection (400),
 validation and size limits, paging limits, owner CRUD + archive/restore + paging, refresh rotation, revocation,
 password change and security stamp invalidation, deleted account, rate limiting (API and account forms),
@@ -49,7 +51,8 @@ open redirect protection, PKCE requirement, unregistered redirect URI, Google bu
    dotnet test --project tests/Starter.E2E.Tests --report-xunit-html --results-directory TestResults/e2e
    ```
 
-Scenarios: anonymous redirect, registration with display name, email confirmation via Mailpit, sign-in, wrong
+Scenarios: data download and account deletion, no administration for regular users, the admin page and user list
+(needs `E2E_SQL` to promote the test account), anonymous redirect, registration with display name, email confirmation via Mailpit, sign-in, wrong
 password, sign-out, password reset, display name change, notes CRUD with delete confirmation, archive/restore,
 dashboard data, isolation of two users, API error messages and validation, phone-size navigation, Google button
 hidden without configuration.

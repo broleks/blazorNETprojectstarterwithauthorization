@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Starter.Api.Features.Account;
+using Starter.Api.Features.Admin;
 using Starter.Api.Features.Dashboard;
 using Starter.Api.Features.Notes;
+using Starter.Api.Features.UserData;
 using Starter.Api.Infrastructure;
 using Starter.Observability;
 
@@ -22,6 +24,9 @@ builder.AddApiAuthentication();
 builder.AddApiRateLimiting();
 
 builder.Services.AddSingleton(TimeProvider.System);
+
+// GDPR: every feature with user data registers its export/delete handler (see Features/UserData).
+builder.Services.AddScoped<IUserDataHandler, NotesUserData>();
 // Errors are described in the API log (title, validation messages) and the response carries a traceId the user can quote.
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = RequestLogging.CaptureProblemDetails);
 builder.Services.AddValidation();
@@ -79,7 +84,11 @@ app.MapGroup("/api")
     .RequireAuthorization(AuthenticationSetup.ApiPolicy)
     .MapMeEndpoints()
     .MapDashboardEndpoints()
-    .MapNotesEndpoints();
+    .MapNotesEndpoints()
+    .MapAdminEndpoints();
+
+// Called only by Starter.Identity's service client (account deletion and data export).
+app.MapUserDataEndpoints();
 
 await app.RunAsync();
 return 0;

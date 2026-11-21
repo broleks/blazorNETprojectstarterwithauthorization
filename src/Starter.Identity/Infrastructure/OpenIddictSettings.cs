@@ -25,8 +25,19 @@ public sealed class CertificateSettings
     public string? Password { get; init; }
 }
 
+public enum ClientKind
+{
+    /// <summary>An application users sign in to (web, mobile): Authorization Code + PKCE, refresh tokens.</summary>
+    Interactive,
+
+    /// <summary>A server-side service without a user: client credentials, accounts scope only.</summary>
+    Service,
+}
+
 public sealed class ClientSettings
 {
+    public ClientKind Kind { get; init; } = ClientKind.Interactive;
+
     public string DisplayName { get; init; } = string.Empty;
 
     /// <summary>Set for confidential (server-side) clients such as Starter.Web. Leave empty for public clients (mobile apps), which rely on PKCE only.</summary>

@@ -39,7 +39,10 @@ No MediatR, AutoMapper or repositories: endpoints use the `DbContext` directly a
    ```
 
    Authentication and authorization come from the group — nothing to repeat per endpoint.
-6. **Tests** — copy `tests/Starter.Api.Tests/Notes/NoteOwnershipTests.cs` and adapt.
+6. **GDPR** — implement `IUserDataHandler` for the entity (export + delete) and register it in `Program.cs`
+   (example: `Features/Notes/NotesUserData.cs`, guide: [accounts-and-admin.md](accounts-and-admin.md)). The test
+   `Every_entity_with_an_owner_has_a_gdpr_handler` fails until you do.
+7. **Tests** — copy `tests/Starter.Api.Tests/Notes/NoteOwnershipTests.cs` and adapt.
 
 ## Add an API endpoint that is not about stored data
 
@@ -108,7 +111,8 @@ No secret → public client; PKCE is required for all clients. Run the identity 
 app uses the system browser (e.g. AppAuth / `WebAuthenticator`), requests `openid profile email offline_access starter_api`,
 stores the refresh token in the platform's secure storage and calls the API with the access token.
 
-## Roles or permissions later
+## Roles
 
-Add roles with ASP.NET Core Identity (`AddRoles<IdentityRole>()`), emit a `role` claim with
-`Destinations.AccessToken` in `AccountSecurity.GetDestinations`, and use authorization policies in the API.
+The `Admin` role is built in ([accounts-and-admin.md](accounts-and-admin.md)). More roles work the same way: create
+them in `DatabaseSetup.SeedAdministratorsAsync` (or on the admin pages), they travel in the `role` claim, and the API
+checks them with an authorization policy.

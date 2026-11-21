@@ -55,7 +55,7 @@ When your own feature works, delete the example:
 
 | Where | What |
 | --- | --- |
-| `src/Starter.Api/Features/Notes/`, `Features/Dashboard/` | Endpoints and entity; remove their `Map...` calls in `Program.cs` and the `Notes` `DbSet` in `Infrastructure/AppDbContext.cs` |
+| `src/Starter.Api/Features/Notes/`, `Features/Dashboard/` | Endpoints, entity and `NotesUserData`; remove their `Map...` calls and the `NotesUserData` registration in `Program.cs` and the `Notes` `DbSet` in `Infrastructure/AppDbContext.cs`. Adapt `Features/Admin/AdminEndpoints.cs` (its statistics count notes) |
 | `src/Starter.Api/Data/Migrations/` | Add a migration that drops the `Notes` table (`dotnet ef migrations add RemoveNotes ...`); do not delete existing migrations once a database has used them |
 | `src/Starter.Contracts/Notes/`, `Dashboard/` | Contracts |
 | `src/Starter.Web/Components/Pages/` | `Notes.razor`, `NoteEditor.razor`, `Archive.razor`, `Dashboard.razor` (replace with your home page at `/`) |

@@ -58,7 +58,7 @@ internal static class AuthorizationEndpoints
                 [IdentityConstants.ApplicationScheme]);
         }
 
-        var principal = AccountSecurity.CreateTokenPrincipal(user, request.GetScopes());
+        var principal = AccountSecurity.CreateTokenPrincipal(user, request.GetScopes(), await userManager.GetRolesAsync(user));
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
@@ -67,6 +67,15 @@ internal static class AuthorizationEndpoints
     {
         var request = context.GetOpenIddictServerRequest()
             ?? throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+
+        if (request.IsClientCredentialsGrantType())
+        {
+            // OpenIddict has authenticated the client (secret) and checked that it may use this grant and scope;
+            // only clients registered with Kind = Service have that permission.
+            return Results.SignIn(
+                AccountSecurity.CreateServicePrincipal(request.ClientId!, request.GetScopes()),
+                authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
 
         if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
         {
@@ -96,7 +105,7 @@ internal static class AuthorizationEndpoints
         }
 
         // Claims are rebuilt from the database so a changed display name reaches the next access token.
-        var principal = AccountSecurity.CreateTokenPrincipal(user, result.Principal!.GetScopes());
+        var principal = AccountSecurity.CreateTokenPrincipal(user, result.Principal!.GetScopes(), await userManager.GetRolesAsync(user));
         logger.LogActivity(LogCategories.Security, "auth.token", EventOutcome.Success,
             new Dictionary<string, object?> { ["Grant"] = grant, ["ClientId"] = request.ClientId }, user.Id);
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);

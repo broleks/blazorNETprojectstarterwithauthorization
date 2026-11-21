@@ -153,6 +153,9 @@ services:
       OpenIddict__Clients__starter-web__ClientSecret: ${WEB_CLIENT_SECRET:?Run 'dotnet run scripts/setup-local.cs' first}
       OpenIddict__Clients__starter-web__RedirectUris__0: https://localhost:7003/signin-oidc
       OpenIddict__Clients__starter-web__PostLogoutRedirectUris__0: https://localhost:7003/signout-callback-oidc
+      OpenIddict__Clients__starter-identity-service__ClientSecret: ${SERVICE_CLIENT_SECRET:?Run 'dotnet run scripts/setup-local.cs' first}
+      Api__BaseUrl: https://localhost:7002/
+      Admin__InitialAdmins__0: ${INITIAL_ADMIN_EMAIL:-}
       Email__Host: mailpit
       Email__Port: "1025"
       Email__Security: None

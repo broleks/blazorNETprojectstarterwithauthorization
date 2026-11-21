@@ -37,8 +37,21 @@ public sealed class AccountSecurity(
         }, user.Id);
     }
 
+    /// <summary>
+    /// Principal for the service client (client credentials): no user, the client id as subject, the API audience.
+    /// </summary>
+    public static ClaimsPrincipal CreateServicePrincipal(string clientId, ImmutableArray<string> scopes)
+    {
+        var identity = new ClaimsIdentity("Starter.Identity.Service", Claims.Name, Claims.Role);
+        identity.SetClaim(Claims.Subject, clientId).SetClaim(Claims.ClientId, clientId);
+        identity.SetScopes(scopes);
+        identity.SetResources(ApiConstants.Audience);
+        identity.SetDestinations(_ => [Destinations.AccessToken]);
+        return new ClaimsPrincipal(identity);
+    }
+
     /// <summary>Builds the identity that OpenIddict turns into tokens. Claims are fresh from the database.</summary>
-    public static ClaimsPrincipal CreateTokenPrincipal(ApplicationUser user, ImmutableArray<string> scopes)
+    public static ClaimsPrincipal CreateTokenPrincipal(ApplicationUser user, ImmutableArray<string> scopes, IEnumerable<string> roles)
     {
         var identity = new ClaimsIdentity(
             authenticationType: "Starter.Identity",
@@ -48,7 +61,8 @@ public sealed class AccountSecurity(
         identity.SetClaim(Claims.Subject, user.Id)
             .SetClaim(Claims.Name, user.DisplayName)
             .SetClaim(Claims.Email, user.Email)
-            .SetClaim(SecurityStampClaim, user.SecurityStamp);
+            .SetClaim(SecurityStampClaim, user.SecurityStamp)
+            .SetClaims(Claims.Role, [.. roles]);
 
         identity.SetScopes(scopes);
         // The API audience is added only when the client asked for the API scope.
@@ -65,6 +79,16 @@ public sealed class AccountSecurity(
             case Claims.Subject:
                 yield return Destinations.AccessToken;
                 yield return Destinations.IdentityToken;
+                break;
+
+            // Roles go to the API (authorization) and to the web app (showing the administration menu).
+            case Claims.Role:
+                yield return Destinations.AccessToken;
+                if (identity.HasScope(Scopes.Profile))
+                {
+                    yield return Destinations.IdentityToken;
+                }
+
                 break;
 
             case Claims.Name when identity.HasScope(Scopes.Profile):

@@ -39,6 +39,9 @@ Ensure("SQL_IDENTITY_PASSWORD", SqlPassword);
 Ensure("SQL_API_PASSWORD", SqlPassword);
 Ensure("SQL_WEB_PASSWORD", SqlPassword);
 Ensure("WEB_CLIENT_SECRET", () => Secret(32));
+Ensure("SERVICE_CLIENT_SECRET", () => Secret(32));
+// Email of an existing, confirmed account that becomes administrator at the next migration step (optional).
+Ensure("INITIAL_ADMIN_EMAIL", () => "");
 Ensure("CERT_PASSWORD", () => Secret(24));
 Ensure("GOOGLE_CLIENT_ID", () => "");
 Ensure("GOOGLE_CLIENT_SECRET", () => "");
@@ -66,6 +69,8 @@ SetUserSecrets("starter-identity-3b7e9a41", new()
     ["ConnectionStrings:Default"] = $"{sql};User Id=starter_identity;Password={env["SQL_IDENTITY_PASSWORD"]}",
     ["ConnectionStrings:Migrations"] = migrations,
     ["OpenIddict:Clients:starter-web:ClientSecret"] = env["WEB_CLIENT_SECRET"],
+    ["OpenIddict:Clients:starter-identity-service:ClientSecret"] = env["SERVICE_CLIENT_SECRET"],
+    ["Admin:InitialAdmins:0"] = env["INITIAL_ADMIN_EMAIL"],
     ["OpenIddict:SigningCertificate:Path"] = Path.Combine(certs, "openiddict-signing.pfx"),
     ["OpenIddict:SigningCertificate:Password"] = certPassword,
     ["OpenIddict:EncryptionCertificate:Path"] = Path.Combine(certs, "openiddict-encryption.pfx"),

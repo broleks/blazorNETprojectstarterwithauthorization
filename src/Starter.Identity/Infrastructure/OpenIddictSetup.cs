@@ -40,7 +40,12 @@ internal static class OpenIddictSetup
                     .AllowRefreshTokenFlow()
                     .RequireProofKeyForCodeExchange();
 
-                options.RegisterScopes(Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.OfflineAccess, ApiConstants.Scope);
+                // Only for the identity server's own service client (Kind = Service), which calls the API's internal
+                // account endpoints when an account is deleted or exported. Client permissions keep user-facing
+                // clients from using it.
+                options.AllowClientCredentialsFlow();
+
+                options.RegisterScopes(Scopes.OpenId, Scopes.Profile, Scopes.Email, Scopes.OfflineAccess, ApiConstants.Scope, ApiConstants.AccountsScope);
                 options.RegisterAudiences(ApiConstants.Audience);
 
                 options.SetAccessTokenLifetime(settings.AccessTokenLifetime)

@@ -11,4 +11,13 @@ public static class ApiConstants
 
     /// <summary>Audience (resource) stamped into access tokens meant for the API.</summary>
     public const string Audience = "starter-api";
+
+    /// <summary>
+    /// Scope of the identity server's own service client (client credentials, no user). It allows only the internal
+    /// account endpoints of the API: deleting and exporting the data of a user whose account is deleted or exported.
+    /// </summary>
+    public const string AccountsScope = "starter_api.accounts";
+
+    /// <summary>Role that can see the administration pages and endpoints.</summary>
+    public const string AdminRole = "Admin";
 }

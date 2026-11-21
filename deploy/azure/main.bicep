@@ -46,6 +46,9 @@ param encryptionCertificateThumbprint string = ''
 @description('Set to true only after the google-client-id and google-client-secret secrets exist in Key Vault. While false, Google sign-in is not configured and its button is not shown.')
 param enableGoogleSignIn bool = false
 
+@description('Email of an existing, confirmed account that becomes administrator at the next migration step. Optional.')
+param initialAdminEmail string = ''
+
 @description('Sender address for account emails.')
 param emailFromAddress string
 
@@ -196,6 +199,9 @@ var apps = [
       { name: 'Authentication__DefaultReturnUrl', value: 'https://${webHost}/' }
       { name: 'OpenIddict__Clients__starter-web__ClientSecret', value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=web-client-secret)' }
       { name: 'OpenIddict__Clients__starter-web__RedirectUris__0', value: 'https://${webHost}/signin-oidc' }
+      { name: 'OpenIddict__Clients__starter-identity-service__ClientSecret', value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=service-client-secret)' }
+      { name: 'Api__BaseUrl', value: 'https://${apiHost}/' }
+      { name: 'Admin__InitialAdmins__0', value: initialAdminEmail }
       { name: 'OpenIddict__Clients__starter-web__PostLogoutRedirectUris__0', value: 'https://${webHost}/signout-callback-oidc' }
       { name: 'Email__FromAddress', value: emailFromAddress }
       { name: 'Email__Host', value: smtpHost }

@@ -17,6 +17,9 @@ public interface IAccountEmailSender
 
     /// <summary>Sent when someone tries to register an email that already has an account, instead of revealing that on the page.</summary>
     Task SendAccountExistsNoticeAsync(string email, string displayName, string signInLink, CancellationToken cancellationToken = default);
+
+    /// <summary>Confirms that an account and its data were deleted (by the user or an administrator).</summary>
+    Task SendAccountDeletedNoticeAsync(string email, string displayName, CancellationToken cancellationToken = default);
 }
 
 internal sealed class SmtpAccountEmailSender(
@@ -42,9 +45,14 @@ internal sealed class SmtpAccountEmailSender(
             "Someone tried to create a new account with this email address. You already have an account, so you can sign in or reset your password instead. If it was not you, you can ignore this email.",
             "Sign in", signInLink, footer: null, cancellationToken);
 
+    public Task SendAccountDeletedNoticeAsync(string email, string displayName, CancellationToken cancellationToken = default) =>
+        SendAsync(email, "Your account has been deleted", displayName,
+            "Your Starter account and the data stored with it have been deleted. If you did not expect this, contact us.",
+            action: null, link: null, footer: null, cancellationToken);
+
     private const string ExpiryNote = "This link expires in a few hours.";
 
-    private async Task SendAsync(string to, string subject, string displayName, string intro, string action, string link,
+    private async Task SendAsync(string to, string subject, string displayName, string intro, string? action, string? link,
         string? footer, CancellationToken cancellationToken)
     {
         if (!TryReserveQuota(to))
@@ -68,11 +76,11 @@ internal sealed class SmtpAccountEmailSender(
         var encoder = HtmlEncoder.Default;
         message.Body = new BodyBuilder
         {
-            TextBody = $"Hi {displayName},\n\n{intro}\n\n{action}: {link}" + (footer is null ? string.Empty : $"\n\n{footer}"),
+            TextBody = $"Hi {displayName},\n\n{intro}" + (link is null ? string.Empty : $"\n\n{action}: {link}") + (footer is null ? string.Empty : $"\n\n{footer}"),
             HtmlBody = $"""
                 <p>Hi {encoder.Encode(displayName)},</p>
                 <p>{encoder.Encode(intro)}</p>
-                <p><a href="{encoder.Encode(link)}">{encoder.Encode(action)}</a></p>
+                {(link is null ? string.Empty : $"<p><a href=\"{encoder.Encode(link)}\">{encoder.Encode(action ?? string.Empty)}</a></p>")}
                 {(footer is null ? string.Empty : $"<p>{encoder.Encode(footer)}</p>")}
                 """,
         }.ToMessageBody();

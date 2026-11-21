@@ -7,6 +7,11 @@
     <a asp-page="./Index" asp-route-returnUrl="@Model.ReturnUrl" aria-current="@Current("/Account/Manage/Index")">Profile</a>
     <a asp-page="./ChangePassword" asp-route-returnUrl="@Model.ReturnUrl" aria-current="@Current("/Account/Manage/ChangePassword")">Password</a>
     <a asp-page="./ExternalLogins" asp-route-returnUrl="@Model.ReturnUrl" aria-current="@Current("/Account/Manage/ExternalLogins")">Sign-in methods</a>
+    <a asp-page="./PersonalData" asp-route-returnUrl="@Model.ReturnUrl" aria-current="@Current("/Account/Manage/PersonalData")">Your data</a>
+    @if (User.IsInRole(Starter.Contracts.ApiConstants.AdminRole))
+    {
+        <a asp-page="/Admin/Users/Index" data-testid="admin-link">Administration</a>
+    }
 </nav>
 @if (Model.ReturnToAppUrl is not null)
 {

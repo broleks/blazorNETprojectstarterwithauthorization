@@ -33,6 +33,9 @@ Keeping these files identical to the starter is what makes porting starter fixes
 - Keep the structure simple: feature folders, minimal APIs, EF Core directly. No MediatR, AutoMapper,
   generic repositories or extra layers.
 - Never put secrets in tracked files. Local secrets live in `.env`, `.certs/` and user secrets.
+- Every feature that stores user data implements `IUserDataHandler` (export + delete, see `docs/accounts-and-admin.md`)
+  and registers it in `src/Starter.Api/Program.cs`; a test enforces this for entities with `OwnerId`.
+- Administrator-only endpoints use `AuthenticationSetup.AdminPolicy`; pages use `[Authorize(Roles = ApiConstants.AdminRole)]`.
 - New API endpoints go under the `/api` group (protected by default); take the user id from the token
   (`ClaimsPrincipal.GetUserId()`), never from the request.
 - After changing an EF Core model, add a migration (`dotnet ef migrations add <Name> --project src/Starter.<App> --output-dir Data/Migrations`).

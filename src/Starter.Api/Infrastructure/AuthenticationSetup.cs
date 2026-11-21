@@ -15,6 +15,15 @@ internal static class AuthenticationSetup
     /// <summary>Policy applied to every API endpoint: a valid access token for this API with the API scope.</summary>
     public const string ApiPolicy = "starter-api";
 
+    /// <summary>The API policy plus the Admin role (role claim in the access token, issued by Starter.Identity).</summary>
+    public const string AdminPolicy = "starter-api-admin";
+
+    /// <summary>
+    /// Internal account endpoints (/api/internal): only the identity server's service client, which authenticates
+    /// with client credentials and gets the accounts scope. A user's token - even an administrator's - is refused.
+    /// </summary>
+    public const string AccountsServicePolicy = "starter-api-accounts";
+
     public static void AddApiAuthentication(this WebApplicationBuilder builder)
     {
         var issuer = builder.Configuration["Authentication:Issuer"]
@@ -46,6 +55,13 @@ internal static class AuthenticationSetup
 
         builder.Services.AddAuthorizationBuilder()
             .AddPolicy(ApiPolicy, apiPolicy)
+            .AddPolicy(AdminPolicy, policy => policy
+                .Combine(apiPolicy)
+                .RequireRole(ApiConstants.AdminRole))
+            .AddPolicy(AccountsServicePolicy, policy => policy
+                .AddAuthenticationSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .RequireAssertion(context => context.User.HasScope(ApiConstants.AccountsScope)))
             // Secure by default: any endpoint that is not explicitly anonymous (health checks) requires the API policy,
             // so a new endpoint cannot be exposed by forgetting an attribute.
             .SetFallbackPolicy(apiPolicy);

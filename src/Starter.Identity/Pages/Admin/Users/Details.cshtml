@@ -1,0 +1,56 @@
+@page "{id}"
+@model Starter.Identity.Pages.Admin.Users.DetailsModel
+@{
+    ViewData["Title"] = Model.Account?.DisplayName ?? "User";
+    var account = Model.Account!;
+}
+<section class="card admin-card" aria-labelledby="page-title">
+    <p class="muted"><a asp-page="./Index">← All users</a></p>
+    <h1 id="page-title">@account.DisplayName</h1>
+    <partial name="_Alerts" model="(Model.ErrorMessage, Model.StatusMessage)" />
+
+    <dl class="details">
+        <dt>Email</dt><dd data-testid="admin-user-email">@account.Email @(account.EmailConfirmed ? "" : "(not confirmed)")</dd>
+        <dt>Created</dt><dd>@account.CreatedAt.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) UTC</dd>
+        <dt>Sign-in methods</dt><dd>@(account.PasswordHash is null ? "" : "Password ")@string.Join(" ", Model.Logins)</dd>
+        <dt>Role</dt><dd>@(Model.IsAdmin ? "Administrator" : "User")</dd>
+        <dt>Status</dt><dd data-testid="admin-user-status">@(Model.IsLocked ? "Locked" : "Active")</dd>
+        <dt>User id</dt><dd><code>@account.Id</code></dd>
+    </dl>
+
+    @if (Model.IsSelf)
+    {
+        <p class="muted">This is your own account. Manage it on <a asp-page="/Account/Manage/Index">your account page</a>.</p>
+    }
+    else
+    {
+        <div class="button-row">
+            @if (Model.IsLocked)
+            {
+                <form method="post" asp-page-handler="Unlock" asp-route-id="@account.Id"><button class="btn btn-secondary">Unlock</button></form>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Lock" asp-route-id="@account.Id"><button class="btn btn-secondary">Lock account</button></form>
+            }
+            @if (Model.IsAdmin)
+            {
+                <form method="post" asp-page-handler="RevokeAdmin" asp-route-id="@account.Id"><button class="btn btn-secondary">Remove Admin role</button></form>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="GrantAdmin" asp-route-id="@account.Id"><button class="btn btn-secondary">Make administrator</button></form>
+            }
+        </div>
+
+        <h2 class="section-gap">Delete account</h2>
+        <p>Deletes the account and all its data in the app immediately. This cannot be undone.</p>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@account.Id" novalidate class="stack">
+            <div class="field">
+                <label asp-for="ConfirmEmail">Type the user's email address to confirm</label>
+                <input asp-for="ConfirmEmail" type="email" autocomplete="off" />
+            </div>
+            <button type="submit" class="btn btn-danger">Delete account permanently</button>
+        </form>
+    }
+</section>
