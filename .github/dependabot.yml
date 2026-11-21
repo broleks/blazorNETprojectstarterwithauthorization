@@ -1,4 +1,8 @@
 # Weekly dependency update pull requests. Review them with the steps in docs/maintenance.md.
+#
+# The starter stays on .NET 10 (LTS). Packages and images whose major version follows the .NET version
+# (ASP.NET Core, EF Core, Microsoft.Extensions, dotnet-ef, the SDK and runtime images, Serilog.Extensions.Hosting)
+# are updated within .NET 10 only; moving to the next .NET version is a deliberate upgrade, not a Dependabot PR.
 version: 2
 updates:
   - package-ecosystem: nuget
@@ -10,13 +14,33 @@ updates:
         patterns: ["Microsoft.AspNetCore.*", "Microsoft.EntityFrameworkCore*", "Microsoft.Extensions.*", "System.*"]
       openiddict:
         patterns: ["OpenIddict*"]
+      logging:
+        patterns: ["Serilog*", "Elastic.*"]
       testing:
         patterns: ["xunit*", "Microsoft.Playwright", "Testcontainers*"]
+    ignore:
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "dotnet-ef"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Serilog.Extensions.Hosting"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directories: ["/src/Starter.Api", "/src/Starter.Identity", "/src/Starter.Web"]
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "dotnet/sdk"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "dotnet/aspnet"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"

@@ -89,7 +89,9 @@ files close to the starter's version to make that easy.
 
 - All package versions are in `Directory.Packages.props` (central package management, transitive pins included).
   There are no `packages.lock.json` files: implicit SDK packages follow the installed SDK patch and would break locked restores.
-- Dependabot opens weekly grouped pull requests (NuGet, Docker base images, GitHub Actions).
+- Dependabot opens weekly grouped pull requests against `main` (NuGet, Docker base images, GitHub Actions).
+  It does not propose the next major .NET version (ASP.NET Core, EF Core, `dotnet-ef`, SDK/runtime images):
+  moving from .NET 10 LTS to a newer .NET is a deliberate upgrade on a branch.
 
 Manual update:
 
