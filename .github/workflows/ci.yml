@@ -93,7 +93,7 @@ jobs:
           if [ -z "$user" ] || [ "$user" = "root" ] || [ "$user" = "0" ]; then exit 1; fi
 
       - name: Scan image for known vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: starter-image:ci
           severity: CRITICAL,HIGH
