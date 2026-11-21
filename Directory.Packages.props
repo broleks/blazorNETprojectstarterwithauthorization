@@ -6,7 +6,7 @@
     <!-- Lets the "Security pins" below override vulnerable versions brought in transitively. -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <AspNetCoreVersion>10.0.14</AspNetCoreVersion>
-    <OpenIddictVersion>7.8.0</OpenIddictVersion>
+    <OpenIddictVersion>7.9.0</OpenIddictVersion>
   </PropertyGroup>
   <ItemGroup Label="ASP.NET Core and EF Core">
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="$(AspNetCoreVersion)" />
