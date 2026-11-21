@@ -61,6 +61,7 @@ public sealed class SetPasswordModel(
             return Page();
         }
 
+        LogSecurity("account.password_set", EventOutcome.Success, user.Id);
         await accountSecurity.RevokeAllSessionsAsync(user, HttpContext.RequestAborted);
         await signInManager.RefreshSignInAsync(user);
         StatusMessage = "Your password has been set.";

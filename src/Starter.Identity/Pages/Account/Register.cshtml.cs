@@ -54,6 +54,10 @@ public sealed class RegisterModel(
         if (existing is not null)
         {
             // The page never reveals that the email is registered; the owner learns it by email instead.
+            LogSecurity("account.register", EventOutcome.Failure, existing.Id, new Dictionary<string, object?>
+            {
+                ["Reason"] = existing.EmailConfirmed ? "email_already_registered" : "email_registered_not_confirmed",
+            });
             if (existing.EmailConfirmed)
             {
                 await emailSender.SendAccountExistsNoticeAsync(existing.Email!, existing.DisplayName,
@@ -80,6 +84,11 @@ public sealed class RegisterModel(
         var result = await userManager.CreateAsync(user, Input.Password);
         if (!result.Succeeded)
         {
+            LogSecurity("account.register", EventOutcome.Failure, details: new Dictionary<string, object?>
+            {
+                ["Reason"] = string.Join(",", result.Errors.Select(e => e.Code)),
+                ["Email"] = ActivityLogExtensions.MaskEmail(Input.Email),
+            });
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
@@ -89,6 +98,7 @@ public sealed class RegisterModel(
         }
 
         logger.LogInformation("New account created: {UserId}", user.Id);
+        LogSecurity("account.register", EventOutcome.Success, user.Id);
         await SendConfirmationEmailAsync(userManager, emailSender, user);
         return RedirectToPage("./RegisterConfirmation", new { returnUrl = ReturnUrl });
     }

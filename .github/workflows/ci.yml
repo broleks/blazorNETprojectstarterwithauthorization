@@ -31,8 +31,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore (locked)
-        run: dotnet restore Starter.slnx --locked-mode
+      - name: Restore
+        run: dotnet restore Starter.slnx
 
       - name: Build
         run: dotnet build Starter.slnx --no-restore --configuration Release

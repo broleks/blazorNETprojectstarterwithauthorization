@@ -24,6 +24,7 @@
             "**/bin/**",
             "**/obj/**",
             "**/TestResults/**",
+            "logs/**",
             ".template.config/**"
           ]
         }

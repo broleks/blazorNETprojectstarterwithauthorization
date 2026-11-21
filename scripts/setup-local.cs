@@ -44,6 +44,9 @@ Ensure("GOOGLE_CLIENT_ID", () => "");
 Ensure("GOOGLE_CLIENT_SECRET", () => "");
 // Production keeps the default of 20 sign-in/registration posts per minute per IP; locally the E2E suite needs more.
 Ensure("ACCOUNT_POSTS_PER_MINUTE", () => "200");
+// Where the apps running in Docker Compose store logs: File, Elasticsearch or Both (Elasticsearch needs --profile logs).
+Ensure("LOG_DESTINATION", () => "File");
+Ensure("LOG_RETENTION_DAYS", () => "7");
 WriteEnv(envPath, env);
 Console.WriteLine("✔ .env");
 

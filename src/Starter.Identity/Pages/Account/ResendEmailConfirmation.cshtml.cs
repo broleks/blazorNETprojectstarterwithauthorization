@@ -27,6 +27,8 @@ public sealed class ResendEmailConfirmationModel(UserManager<ApplicationUser> us
         }
 
         var user = await userManager.FindByEmailAsync(Email);
+        LogSecurity("account.resend_confirmation", user is { EmailConfirmed: false } ? EventOutcome.Success : EventOutcome.Unknown, user?.Id,
+            new Dictionary<string, object?> { ["Reason"] = user is null ? "unknown_email" : user.EmailConfirmed ? "already_confirmed" : null });
         if (user is { EmailConfirmed: false })
         {
             await SendConfirmationEmailAsync(userManager, emailSender, user);

@@ -59,6 +59,8 @@ This page lists the protections built into the starter, where they live, and wha
 - Security headers: CSP (`script-src 'self'`, no inline script), `frame-ancestors 'none'`, `X-Content-Type-Options`,
   `Referrer-Policy`.
 - No secrets in the repository: `.env`, `.certs/`, user secrets locally; Key Vault in Azure.
+- Activity log (docs/logging.md): users identified by `user.id`, emails masked, session keys hashed, no request bodies;
+  verified by integration tests. Logs are still personal data — short retention (7 days by default), restricted Kibana access.
 - Logs never include passwords, tokens or codes (OpenIddict logging at Warning; PII logging off; email addresses
   are not logged by the email sender).
 - Containers run as the non-root `app` user; least-privilege database users per application.

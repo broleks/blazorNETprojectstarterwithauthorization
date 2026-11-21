@@ -1,0 +1,26 @@
+{
+  "index_patterns": ["logs-starter.*-*"],
+  "data_stream": {},
+  "priority": 500,
+  "composed_of": ["ecs@mappings"],
+  "template": {
+    "lifecycle": {
+      "data_retention": "__RETENTION__"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "message": { "type": "text" },
+        "trace.id": { "type": "keyword" },
+        "span.id": { "type": "keyword" },
+        "service": { "properties": { "name": { "type": "keyword" } } },
+        "user": { "properties": { "id": { "type": "keyword" } } },
+        "event": { "properties": { "action": { "type": "keyword" }, "outcome": { "type": "keyword" } } },
+        "labels": { "properties": { "LogCategory": { "type": "keyword" } } }
+      }
+    }
+  },
+  "_meta": {
+    "description": "Starter application logs (Elastic Common Schema). Retention is set by LOG_RETENTION_DAYS."
+  }
+}

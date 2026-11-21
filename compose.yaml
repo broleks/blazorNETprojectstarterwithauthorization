@@ -3,6 +3,8 @@
 #   Variant 1 - everything in containers:        docker compose --profile app up -d --build --wait
 #   Variant 2 - only SQL Server and Mailpit here: docker compose up -d --wait   (apps run with dotnet run / Visual Studio)
 #
+#   Optional - local Elasticsearch + Kibana for logs:  add --profile logs (Kibana at http://localhost:5601)
+#
 # In both variants the browser uses the same addresses:
 #   https://localhost:7003  Starter.Web        https://localhost:7001  Starter.Identity
 #   https://localhost:7002  Starter.Api        http://localhost:8025   Mailpit (test inbox)
@@ -17,6 +19,7 @@ x-app: &app
   network_mode: "service:localhost"
   volumes:
     - ./.certs:/https:ro
+    - app-logs:/app/logs
   depends_on: &app-depends
     localhost:
       condition: service_started
@@ -28,6 +31,13 @@ x-app-environment: &app-environment
   ASPNETCORE_Kestrel__Certificates__Default__Password: ${CERT_PASSWORD:?Run 'dotnet run scripts/setup-local.cs' first}
   # ...and its public part is trusted for server-to-server calls. Certificate validation stays on.
   SSL_CERT_DIR: /https/trust:/etc/ssl/certs
+  # Logs: files in the app-logs volume and/or the local Elasticsearch (profile "logs"). Switch in .env:
+  # LOG_DESTINATION=File | Elasticsearch | Both. Categories can be overridden the same way (see docs/logging.md).
+  ActivityLogging__Destination: ${LOG_DESTINATION:-File}
+  ActivityLogging__RetentionDays: ${LOG_RETENTION_DAYS:-7}
+  ActivityLogging__File__Path: /app/logs
+  ActivityLogging__Elasticsearch__Url: http://elasticsearch:9200
+  ActivityLogging__Elasticsearch__Namespace: docker
 
 x-sql: &sql "Server=sqlserver;Database=Starter;Encrypt=True;TrustServerCertificate=True"
 
@@ -249,5 +259,72 @@ services:
       retries: 12
       start_period: 15s
 
+  # ------------------------------------------------------------------------------------------------
+  # Profile "logs": local Elasticsearch + Kibana. Development only: security is switched off and the
+  # ports are bound to 127.0.0.1. Needs about 2-3 GB of memory.
+  # ------------------------------------------------------------------------------------------------
+
+  elasticsearch:
+    profiles: [logs]
+    image: elasticsearch:9.5.5
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      # A single local node must keep working on a fairly full laptop disk (default: stop at 90% used).
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s > /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    restart: unless-stopped
+
+  kibana:
+    profiles: [logs]
+    image: kibana:9.5.5
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "127.0.0.1:5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Creates the index template (ECS mappings, retention) and the Kibana data view, then exits.
+  elastic-setup:
+    profiles: [logs]
+    image: elasticsearch:9.5.5
+    entrypoint: ["/bin/bash", "/setup/setup.sh"]
+    environment:
+      LOG_RETENTION_DAYS: ${LOG_RETENTION_DAYS:-7}
+    volumes:
+      - ./deploy/elastic:/setup:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: "no"
+
+  # Lets `docker compose --profile logs up -d --wait` return only after the setup above has finished.
+  logs-ready:
+    profiles: [logs]
+    image: mcr.microsoft.com/dotnet/runtime-deps:10.0
+    user: app
+    init: true
+    command: ["sleep", "infinity"]
+    depends_on:
+      elastic-setup:
+        condition: service_completed_successfully
+      kibana:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   sqlserver-data:
+  app-logs:
+  elastic-data:

@@ -164,13 +164,19 @@ public sealed class IdentityFactory : WebApplicationFactory<ApplicationUser>
     {
         this.fixture = fixture;
         this.configure = configure;
+        LogFolder = Directory.CreateTempSubdirectory("starter-logs-").FullName;
         // The identity server only accepts HTTPS and issues tokens for this exact address.
         ClientOptions.BaseAddress = new Uri(StarterFixture.IdentityUrl);
     }
 
+    /// <summary>Where this instance writes its log files (ActivityLogging, destination File).</summary>
+    public string LogFolder { get; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting("ActivityLogging:File:Path", LogFolder);
+        builder.UseSetting("ActivityLogging:Destination", "File");
         foreach (var (key, value) in fixture.IdentitySettings().Concat(configure ?? []))
         {
             builder.UseSetting(key, value);
@@ -208,13 +214,19 @@ public sealed class ApiFactory : WebApplicationFactory<Starter.Api.Infrastructur
         this.fixture = fixture;
         this.settings = settings;
         ClientOptions.BaseAddress = new Uri(StarterFixture.ApiUrl);
+        LogFolder = Directory.CreateTempSubdirectory("starter-logs-").FullName;
     }
+
+    /// <summary>Where this instance writes its log files (ActivityLogging, destination File).</summary>
+    public string LogFolder { get; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Default", fixture.ConnectionString);
         builder.UseSetting("Authentication:Issuer", StarterFixture.IdentityUrl);
+        builder.UseSetting("ActivityLogging:File:Path", LogFolder);
+        builder.UseSetting("ActivityLogging:Destination", "File");
         foreach (var (key, value) in settings ?? [])
         {
             builder.UseSetting(key, value);

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using OpenIddict.Abstractions;
 using Starter.Contracts;
 using Starter.Identity.Data;
+using Starter.Observability;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Starter.Identity.Infrastructure;
@@ -29,8 +30,11 @@ public sealed class AccountSecurity(
     {
         var revokedAuthorizations = await authorizations.RevokeBySubjectAsync(user.Id, cancellationToken);
         var revokedTokens = await tokens.RevokeBySubjectAsync(user.Id, cancellationToken);
-        logger.LogInformation("Revoked {Authorizations} authorizations and {Tokens} tokens for user {UserId}",
-            revokedAuthorizations, revokedTokens, user.Id);
+        logger.LogActivity(LogCategories.Security, "auth.sessions_revoked", EventOutcome.Success, new Dictionary<string, object?>
+        {
+            ["Authorizations"] = revokedAuthorizations,
+            ["Tokens"] = revokedTokens,
+        }, user.Id);
     }
 
     /// <summary>Builds the identity that OpenIddict turns into tokens. Claims are fresh from the database.</summary>

@@ -4,6 +4,7 @@ using Starter.Identity.Data;
 using Starter.Identity.Endpoints;
 using Starter.Identity.Infrastructure;
 using Starter.Identity.Infrastructure.Email;
+using Starter.Observability;
 
 if (args is ["--health-check", var healthUrl])
 {
@@ -12,6 +13,7 @@ if (args is ["--health-check", var healthUrl])
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddStarterLogging("identity");
 builder.AddAuthDatabase();
 builder.AddAccounts();
 builder.AddAuthorizationServer();
@@ -59,6 +61,7 @@ app.UseSecurityHeaders(app.Services.GetRequiredService<PublicUrls>(), googleEnab
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseUserLogScope();
 app.UseAuthorization();
 
 app.MapStaticAssets();

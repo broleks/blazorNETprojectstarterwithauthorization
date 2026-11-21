@@ -11,7 +11,8 @@
     <!-- CA1515 (make types internal) and CA1848 (LoggerMessage delegates) add noise without
          much value for application code in a starter; the rest of the recommended rules stay on. -->
     <NoWarn>$(NoWarn);CA1515;CA1848;CA1873;CA2007;CA1062;CA1716;CA1056;CA1054;CA1055;CA1002;CA2227;CA1031;CA1724;CA1819;CA1305;CA1307;CA1309;CA1310;CA1311;CA1304</NoWarn>
-    <!-- Lock files make restores reproducible in CI and container builds. -->
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- No packages.lock.json: the .NET SDK adds implicit packages whose version follows the installed SDK patch,
+         so lock files break restores on machines and images with a different SDK patch. Versions are pinned
+         centrally in Directory.Packages.props instead (including transitive pins). -->
   </PropertyGroup>
 </Project>

@@ -4,6 +4,7 @@ using Starter.Api.Features.Account;
 using Starter.Api.Features.Dashboard;
 using Starter.Api.Features.Notes;
 using Starter.Api.Infrastructure;
+using Starter.Observability;
 
 if (args is ["--health-check", var healthUrl])
 {
@@ -15,12 +16,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Requests are small JSON documents; anything larger is rejected before it reaches an endpoint.
 builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = 64 * 1024);
 
+builder.AddStarterLogging("api");
 builder.AddAppDatabase();
 builder.AddApiAuthentication();
 builder.AddApiRateLimiting();
 
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddProblemDetails();
+// Errors are described in the API log (title, validation messages) and the response carries a traceId the user can quote.
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = RequestLogging.CaptureProblemDetails);
 builder.Services.AddValidation();
 builder.Services.AddOpenApi();
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -56,6 +59,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseUserLogScope();
+app.UseApiRequestLogging();
 app.UseRateLimiter();
 app.UseAuthorization();
 

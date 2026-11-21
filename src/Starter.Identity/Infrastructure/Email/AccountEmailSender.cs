@@ -5,6 +5,7 @@ using AuthenticationException = MailKit.Security.AuthenticationException;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using Starter.Observability;
 
 namespace Starter.Identity.Infrastructure.Email;
 
@@ -50,7 +51,12 @@ internal sealed class SmtpAccountEmailSender(
         {
             // The caller shows the same message either way, so throttling does not reveal anything.
             // The address is not logged to keep personal data out of logs.
-            logger.LogWarning("Account email '{Subject}' not sent: per-recipient limit reached", subject);
+            logger.LogActivity(LogCategories.Security, "email.send", EventOutcome.Failure, new Dictionary<string, object?>
+            {
+                ["Subject"] = subject,
+                ["Reason"] = "per_recipient_limit_reached",
+                ["Recipient"] = ActivityLogExtensions.MaskEmail(to),
+            });
             return;
         }
 
@@ -82,13 +88,25 @@ internal sealed class SmtpAccountEmailSender(
 
             await client.SendAsync(message, cancellationToken);
             await client.DisconnectAsync(quit: true, cancellationToken);
-            logger.LogInformation("Account email '{Subject}' sent", subject);
+            logger.LogActivity(LogCategories.Security, "email.send", EventOutcome.Success, new Dictionary<string, object?>
+            {
+                ["Subject"] = subject,
+                ["Recipient"] = ActivityLogExtensions.MaskEmail(to),
+                ["SmtpHost"] = settings.Host,
+            });
         }
         catch (Exception ex) when (ex is MailKit.ProtocolException or MailKit.CommandException or System.Net.Sockets.SocketException or IOException or AuthenticationException or SslHandshakeException)
         {
             // The account action itself succeeded; the user is told to check their inbox and can ask for the
             // email again. The failure is logged for operators (without the recipient's address).
-            logger.LogError(ex, "Account email '{Subject}' could not be sent", subject);
+            logger.LogActivity(LogCategories.Security, "email.send", EventOutcome.Failure, new Dictionary<string, object?>
+            {
+                ["Subject"] = subject,
+                ["Recipient"] = ActivityLogExtensions.MaskEmail(to),
+                ["SmtpHost"] = settings.Host,
+                ["SmtpPort"] = settings.Port,
+                ["Reason"] = ex.GetType().Name,
+            }, level: LogLevel.Error, exception: ex);
         }
     }
 

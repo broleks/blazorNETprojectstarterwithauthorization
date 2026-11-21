@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Shared logging for Starter.Identity, Starter.Api and Starter.Web: one configuration section, one log format
+       (Elastic Common Schema JSON), the same destinations (local files and/or Elasticsearch) and the same event
+       names in all three applications. A stable module: applications configure it, they do not change it. -->
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Elastic.Serilog.Sinks" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Starter.Api.Tests" />
+  </ItemGroup>
+
+</Project>

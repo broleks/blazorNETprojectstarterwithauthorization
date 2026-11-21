@@ -13,6 +13,7 @@ The following are **stable modules**. Do not change their code as part of featur
 - `src/Starter.Web/Infrastructure/Authentication/**` and `src/Starter.Web/Infrastructure/Sessions/**`
 - `src/Starter.Web/Infrastructure/Api/ApiClient.cs`, `ApiResult.cs` and `AccountApi.cs`
 - `src/Starter.Api/Infrastructure/AuthenticationSetup.cs`
+- the whole `src/Starter.Observability` project (logging)
 
 Configuration of these modules (appsettings, user secrets, environment variables, client registrations,
 Google credentials) may change per application.
@@ -23,6 +24,9 @@ and mention that it probably belongs in the starter repository too, so other app
 Keeping these files identical to the starter is what makes porting starter fixes a clean `git cherry-pick`.
 
 - Read `README.md` and `docs/architecture.md` before changing authentication, tokens or sessions.
+- Logging: follow `docs/logging.md`. API calls are logged automatically; for new business or UI events use
+  `logger.LogActivity(LogCategories.Api, "<feature>.<action>", ...)` or `FrontendActivity`. Never log passwords,
+  tokens, email addresses (use `ActivityLogExtensions.MaskEmail`) or user-entered content.
 - Frontend work (Blazor components in `src/Starter.Web`, account pages in `src/Starter.Identity/Pages`):
   follow `design/STYLE-PROMPT.md` and reuse the tokens and classes from `src/Starter.Ui/wwwroot/theme.css`.
 - Code, comments, documentation and UI text are in English.

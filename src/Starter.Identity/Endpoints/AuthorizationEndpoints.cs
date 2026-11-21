@@ -7,6 +7,7 @@ using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using Starter.Identity.Data;
 using Starter.Identity.Infrastructure;
+using Starter.Observability;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Starter.Identity.Endpoints;
@@ -62,7 +63,7 @@ internal static class AuthorizationEndpoints
     }
 
     private static async Task<IResult> Exchange(
-        HttpContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        HttpContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, ILogger<SecurityEventsLog> logger)
     {
         var request = context.GetOpenIddictServerRequest()
             ?? throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
@@ -78,19 +79,26 @@ internal static class AuthorizationEndpoints
         var user = userId is null ? null : await userManager.FindByIdAsync(userId);
 
         // The account may have been deleted, or may no longer be allowed to sign in.
+        var grant = request.IsRefreshTokenGrantType() ? "refresh_token" : "authorization_code";
         if (user is null || !await signInManager.CanSignInAsync(user))
         {
+            logger.LogActivity(LogCategories.Security, "auth.token", EventOutcome.Failure,
+                new Dictionary<string, object?> { ["Grant"] = grant, ["Reason"] = user is null ? "account_deleted" : "not_allowed" }, userId);
             return Forbid(Errors.InvalidGrant, "The account is no longer allowed to sign in.");
         }
 
         // A password change or reset updates the security stamp; older refresh tokens stop working.
         if (!string.Equals(result.Principal!.GetClaim(AccountSecurity.SecurityStampClaim), user.SecurityStamp, StringComparison.Ordinal))
         {
+            logger.LogActivity(LogCategories.Security, "auth.token", EventOutcome.Failure,
+                new Dictionary<string, object?> { ["Grant"] = grant, ["Reason"] = "security_stamp_changed" }, user.Id);
             return Forbid(Errors.InvalidGrant, "The session is no longer valid.");
         }
 
         // Claims are rebuilt from the database so a changed display name reaches the next access token.
         var principal = AccountSecurity.CreateTokenPrincipal(user, result.Principal!.GetScopes());
+        logger.LogActivity(LogCategories.Security, "auth.token", EventOutcome.Success,
+            new Dictionary<string, object?> { ["Grant"] = grant, ["ClientId"] = request.ClientId }, user.Id);
         return Results.SignIn(principal, authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
@@ -98,7 +106,7 @@ internal static class AuthorizationEndpoints
     /// RP-initiated logout. When the client sent a valid <c>id_token_hint</c> (Starter.Web always does) the user is
     /// signed out immediately. Without it the request could come from any site, so the user is asked to confirm.
     /// </summary>
-    private static async Task<IResult> EndSession(HttpContext context, SignInManager<ApplicationUser> signInManager)
+    private static async Task<IResult> EndSession(HttpContext context, SignInManager<ApplicationUser> signInManager, ILogger<SecurityEventsLog> logger)
     {
         var result = await context.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         if (result.Principal is null)
@@ -106,17 +114,20 @@ internal static class AuthorizationEndpoints
             return Results.Redirect("/Account/Logout" + context.Request.QueryString);
         }
 
-        return await SignOutAsync(signInManager);
+        return await SignOutAsync(context, signInManager, logger);
     }
 
-    private static async Task<IResult> ConfirmEndSession(HttpContext context, IAntiforgery antiforgery, SignInManager<ApplicationUser> signInManager)
+    private static async Task<IResult> ConfirmEndSession(
+        HttpContext context, IAntiforgery antiforgery, SignInManager<ApplicationUser> signInManager, ILogger<SecurityEventsLog> logger)
     {
         await antiforgery.ValidateRequestAsync(context);
-        return await SignOutAsync(signInManager);
+        return await SignOutAsync(context, signInManager, logger);
     }
 
-    private static async Task<IResult> SignOutAsync(SignInManager<ApplicationUser> signInManager)
+    private static async Task<IResult> SignOutAsync(HttpContext context, SignInManager<ApplicationUser> signInManager, ILogger logger)
     {
+        var userId = (await context.AuthenticateAsync(IdentityConstants.ApplicationScheme)).Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+        logger.LogActivity(LogCategories.Security, "auth.sign_out", EventOutcome.Success, userId: userId);
         await signInManager.SignOutAsync();
 
         // OpenIddict redirects to the client's validated post_logout_redirect_uri, or to RedirectUri otherwise.
@@ -133,3 +144,6 @@ internal static class AuthorizationEndpoints
         }),
         [OpenIddictServerAspNetCoreDefaults.AuthenticationScheme]);
 }
+
+/// <summary>Logger category for security events written by the OpenID Connect endpoints.</summary>
+internal sealed class SecurityEventsLog;

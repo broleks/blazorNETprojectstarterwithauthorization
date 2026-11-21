@@ -61,6 +61,8 @@ public sealed class ChangePasswordModel(
         var result = await userManager.ChangePasswordAsync(user, Input.OldPassword, Input.NewPassword);
         if (!result.Succeeded)
         {
+            LogSecurity("account.password_change", EventOutcome.Failure, user.Id,
+                new Dictionary<string, object?> { ["Reason"] = string.Join(",", result.Errors.Select(e => e.Code)) });
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
@@ -69,6 +71,7 @@ public sealed class ChangePasswordModel(
             return Page();
         }
 
+        LogSecurity("account.password_change", EventOutcome.Success, user.Id);
         // The security stamp changed: other browsers lose their identity session within a minute and their
         // refresh tokens are revoked now. This browser keeps its session (RefreshSignInAsync).
         await accountSecurity.RevokeAllSessionsAsync(user, HttpContext.RequestAborted);

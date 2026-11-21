@@ -14,10 +14,14 @@ public sealed class ConfirmEmailModel(UserManager<ApplicationUser> userManager) 
         var user = userId is null ? null : await userManager.FindByIdAsync(userId);
         if (user is null || token is null)
         {
+            LogSecurity("account.confirm_email", EventOutcome.Failure, user?.Id, new Dictionary<string, object?> { ["Reason"] = "invalid_link" });
             return Page();
         }
 
-        Succeeded = user.EmailConfirmed || (await userManager.ConfirmEmailAsync(user, token)).Succeeded;
+        var alreadyConfirmed = user.EmailConfirmed;
+        Succeeded = alreadyConfirmed || (await userManager.ConfirmEmailAsync(user, token)).Succeeded;
+        LogSecurity("account.confirm_email", Succeeded ? EventOutcome.Success : EventOutcome.Failure, user.Id,
+            new Dictionary<string, object?> { ["Reason"] = alreadyConfirmed ? "already_confirmed" : Succeeded ? null : "invalid_or_expired_token" });
         return Page();
     }
 }

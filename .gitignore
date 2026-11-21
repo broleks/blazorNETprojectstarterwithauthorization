@@ -30,3 +30,6 @@ coverage*/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local application logs (see docs/logging.md)
+logs/

@@ -54,6 +54,7 @@ public sealed class ExternalLoginsModel(
             return Page();
         }
 
+        LogSecurity("account.external_login_remove", EventOutcome.Success, user.Id, new Dictionary<string, object?> { ["Provider"] = loginProvider });
         await signInManager.RefreshSignInAsync(user);
         StatusMessage = "The sign-in method was removed.";
         return RedirectToPage(new { returnUrl = ReturnUrl });
@@ -88,6 +89,8 @@ public sealed class ExternalLoginsModel(
         }
 
         var result = await userManager.AddLoginAsync(user, info);
+        LogSecurity("account.external_login_link", result.Succeeded ? EventOutcome.Success : EventOutcome.Failure, user.Id,
+            new Dictionary<string, object?> { ["Provider"] = info.LoginProvider, ["Reason"] = string.Join(",", result.Errors.Select(e => e.Code)) });
         if (!result.Succeeded)
         {
             await LoadAsync(user);

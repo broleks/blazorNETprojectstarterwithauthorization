@@ -58,6 +58,7 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager,
         var token = DecodeToken(Input.Code);
         if (user is null || token is null)
         {
+            LogSecurity("account.password_reset", EventOutcome.Failure, user?.Id, new Dictionary<string, object?> { ["Reason"] = "invalid_link_or_email" });
             ErrorMessage = "The password reset link is invalid or has expired. Request a new one.";
             return Page();
         }
@@ -65,6 +66,8 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager,
         var result = await userManager.ResetPasswordAsync(user, token, Input.Password);
         if (!result.Succeeded)
         {
+            LogSecurity("account.password_reset", EventOutcome.Failure, user.Id,
+                new Dictionary<string, object?> { ["Reason"] = string.Join(",", result.Errors.Select(e => e.Code)) });
             var invalidToken = result.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.InvalidToken));
             if (invalidToken)
             {
@@ -81,6 +84,7 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager,
             return Page();
         }
 
+        LogSecurity("account.password_reset", EventOutcome.Success, user.Id);
         // ResetPasswordAsync changed the security stamp; also revoke refresh tokens on every device.
         await accountSecurity.RevokeAllSessionsAsync(user, HttpContext.RequestAborted);
         return RedirectToPage("./ResetPasswordConfirmation", new { returnUrl = ReturnUrl });

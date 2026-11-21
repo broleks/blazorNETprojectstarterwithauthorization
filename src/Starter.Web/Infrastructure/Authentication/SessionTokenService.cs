@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Starter.Observability;
 using Starter.Web.Infrastructure.Sessions;
 
 namespace Starter.Web.Infrastructure.Authentication;
@@ -69,10 +70,16 @@ public sealed class SessionTokenService(
             {
                 case OidcTokenClient.Outcome.Success:
                     await SaveTokensAsync(sessionKey, result.Tokens!, cancellationToken);
+                    logger.LogActivity(LogCategories.Security, "auth.token_refresh", EventOutcome.Success,
+                        new Dictionary<string, object?> { [LogProperties.SessionId] = ActivityLogExtensions.HashForLogs(sessionKey) });
                     return new(AccessTokenStatus.Ok, result.Tokens!.AccessToken);
 
                 case OidcTokenClient.Outcome.Rejected:
-                    logger.LogInformation("Session ended because its refresh token was rejected");
+                    logger.LogActivity(LogCategories.Security, "auth.session_ended", EventOutcome.Failure, new Dictionary<string, object?>
+                    {
+                        [LogProperties.SessionId] = ActivityLogExtensions.HashForLogs(sessionKey),
+                        ["Reason"] = "refresh_token_rejected",
+                    });
                     await DeleteAsync(sessionKey, cancellationToken);
                     return new(AccessTokenStatus.SessionEnded);
 

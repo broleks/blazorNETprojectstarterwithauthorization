@@ -12,6 +12,7 @@ containers and tests are already in place.
 | API | ASP.NET Core minimal APIs, JWT validation, per-user data (`Starter.Api`) |
 | Data | EF Core, SQL Server locally, Azure SQL in production |
 | Local run | Docker Compose (SQL Server, Mailpit, optionally the apps) or `dotnet run` / Visual Studio |
+| Logging | One switchable activity log (errors, security, API calls, UI) as ECS JSON to files and/or Elasticsearch + Kibana (`Starter.Observability`) |
 | Tests | Integration tests with the real auth stack (`Starter.Api.Tests`), Playwright E2E (`Starter.E2E.Tests`) |
 | Delivery | Multi-stage Dockerfiles, GitHub Actions CI, Azure App Service + Azure SQL (Bicep) |
 
@@ -31,6 +32,7 @@ containers and tests are already in place.
   [Google sign-in](docs/google-sign-in.md) ·
   [extending the starter](docs/extending.md) ·
   [testing](docs/testing.md) ·
+  [logging](docs/logging.md) ·
   [Azure deployment](docs/azure-deployment.md) ·
   [maintenance and new apps](docs/maintenance.md)
 - UI style: [`design/STYLE-PROMPT.md`](design/STYLE-PROMPT.md)
@@ -44,6 +46,7 @@ src/
   Starter.Web         Blazor Web App (Interactive Server): UI, OpenID Connect client, server-side sessions
   Starter.Contracts   Request/response models shared by the API and its clients
   Starter.Ui          Shared stylesheet (theme.css) used by the app and the account pages
+  Starter.Observability  Shared logging: categories, ECS JSON format, files and/or Elasticsearch
 tests/
   Starter.Api.Tests   Integration and security tests: real identity server + API in memory, SQL Server in a container
   Starter.E2E.Tests   Playwright (xUnit v3) end-to-end tests against a running environment
@@ -67,6 +70,7 @@ Clone the starter (or generate a renamed copy), then build your application in t
 | Web front: pages, layout, calling the API | `Starter.Web` (`Components/**`, `Infrastructure/Api/*Api.cs`) | **You build here** |
 | Your API: business logic and data | `Starter.Api` (`Features/**`) + `Starter.Contracts` | **You build here** |
 | Sign-in service: accounts, tokens, account pages | `Starter.Identity` | **Unchanged** — configure only |
+| Logging | `Starter.Observability` | **Unchanged** — configure only (`ActivityLogging`) |
 | Sign-in plumbing in the web app and API | `Starter.Web/Infrastructure/Authentication`, `Sessions`, `ApiClient.cs`; `Starter.Api/Infrastructure/AuthenticationSetup.cs` | **Unchanged** |
 
 Changes to the stable parts (extra registration fields, roles, two-factor authentication) are deliberate decisions
@@ -128,6 +132,7 @@ In Development the apps apply their database migrations at startup.
 | https://localhost:7001 | Account pages / identity server (Starter.Identity) |
 | https://localhost:7002/health/ready | API health (API endpoints need a token) |
 | http://localhost:8025 | Mailpit — confirmation and password reset emails land here |
+| http://localhost:5601 | Kibana with the application logs (optional: `docker compose --profile logs up -d --wait`) |
 
 Both variants use the same addresses, so OAuth redirect URIs and the Google callback URL are identical.
 Stop everything with `docker compose --profile app down` (add `--volumes` to delete the database).
@@ -180,6 +185,7 @@ sequenceDiagram
 | Token refresh for circuits | `src/Starter.Web/Infrastructure/Authentication/SessionTokenService.cs` |
 | Calling the API from components | `src/Starter.Web/Infrastructure/Api/ApiClient.cs`, `NotesApi.cs` |
 | Pages and layout | `src/Starter.Web/Components/**` |
+| Logging setup, categories, event helpers | `src/Starter.Observability/` (guide: [docs/logging.md](docs/logging.md)) |
 | Theme | `src/Starter.Ui/wwwroot/theme.css`, `src/Starter.Web/wwwroot/css/app.css` |
 
 How to add a protected page, an API endpoint and a new entity: [docs/extending.md](docs/extending.md).
@@ -202,7 +208,7 @@ Reports, traces and options: [docs/testing.md](docs/testing.md).
 
 ## Status and limits
 
-The starter is verified locally in both variants (build, 60 integration tests, 15 Playwright tests, container
+The starter is verified locally in both variants (build, 69 integration tests, 15 Playwright tests, container
 images). The Azure template compiles but has not been deployed by the authors of this repository — treat
 [docs/azure-deployment.md](docs/azure-deployment.md) as a reviewed plan, not a tested release. Multi-instance
 operation is designed for (shared Data Protection keys and sessions in SQL) but not verified; see the scaling

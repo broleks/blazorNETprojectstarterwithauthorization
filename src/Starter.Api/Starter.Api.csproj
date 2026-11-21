@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Starter.Contracts\Starter.Contracts.csproj" />
+    <ProjectReference Include="..\Starter.Observability\Starter.Observability.csproj" />
   </ItemGroup>
 
   <ItemGroup>

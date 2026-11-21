@@ -38,6 +38,11 @@ public sealed class LoginModel(
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         await LoadExternalLoginsAsync();
 
+        if (ExternalError is not null)
+        {
+            LogSecurity("auth.external_sign_in", EventOutcome.Failure, details: new Dictionary<string, object?> { ["Reason"] = ExternalError });
+        }
+
         ErrorMessage = ExternalError switch
         {
             "cancelled" => "Google sign-in was cancelled. You can try again or sign in with your email and password.",
@@ -55,25 +60,34 @@ public sealed class LoginModel(
         }
 
         var result = await signInManager.PasswordSignInAsync(Input.Email, Input.Password, isPersistent: false, lockoutOnFailure: true);
+        var user = await userManager.FindByEmailAsync(Input.Email);
         if (result.Succeeded)
         {
             logger.LogInformation("User signed in with a password");
+            LogSecurity("auth.sign_in", EventOutcome.Success, user?.Id, new Dictionary<string, object?> { ["Method"] = "password" });
             return RedirectToReturnUrl();
         }
 
         if (result.IsLockedOut)
         {
+            LogSecurity("auth.sign_in", EventOutcome.Failure, user?.Id, new Dictionary<string, object?> { ["Reason"] = "locked_out" });
             return RedirectToPage("./Lockout");
         }
 
         if (result.IsNotAllowed && await IsUnconfirmedWithCorrectPasswordAsync())
         {
+            LogSecurity("auth.sign_in", EventOutcome.Failure, user?.Id, new Dictionary<string, object?> { ["Reason"] = "email_not_confirmed" });
             ErrorMessage = "Confirm your email address before signing in. Check your inbox for the confirmation email.";
             ShowResendConfirmation = true;
             return Page();
         }
 
-        // One message for unknown email and wrong password, so the form does not reveal which emails are registered.
+        // The log tells them apart; the page shows one message so it does not reveal which emails are registered.
+        LogSecurity("auth.sign_in", EventOutcome.Failure, user?.Id, new Dictionary<string, object?>
+        {
+            ["Reason"] = user is null ? "unknown_email" : "wrong_password",
+            ["Email"] = ActivityLogExtensions.MaskEmail(Input.Email),
+        });
         ErrorMessage = "The email or password is incorrect.";
         return Page();
     }

@@ -64,8 +64,19 @@ public sealed class ExternalLoginModel(
         }
 
         var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+        var linked = await userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+        if (!result.Succeeded)
+        {
+            LogSecurity("auth.sign_in", EventOutcome.Failure, linked?.Id, new Dictionary<string, object?>
+            {
+                ["Method"] = info.LoginProvider,
+                ["Reason"] = result.IsLockedOut ? "locked_out" : result.IsNotAllowed ? "email_not_confirmed" : "no_linked_account",
+            });
+        }
+
         if (result.Succeeded)
         {
+            LogSecurity("auth.sign_in", EventOutcome.Success, linked?.Id, new Dictionary<string, object?> { ["Method"] = info.LoginProvider });
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             logger.LogInformation("User signed in with {Provider}", info.LoginProvider);
             return RedirectToReturnUrl();
@@ -126,6 +137,11 @@ public sealed class ExternalLoginModel(
         }
 
         logger.LogInformation("Account {UserId} created with {Provider}", user.Id, info.LoginProvider);
+        LogSecurity("account.register", EventOutcome.Success, user.Id, new Dictionary<string, object?>
+        {
+            ["Method"] = info.LoginProvider,
+            ["EmailVerifiedByProvider"] = user.EmailConfirmed,
+        });
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
         if (!user.EmailConfirmed)

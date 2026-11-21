@@ -104,6 +104,8 @@ public sealed class NotesTests(PlaywrightFixture fixture) : E2ETestBase(fixture)
         var error = Page.GetByTestId("api-error");
         await Expect(error).ToContainTextAsync("We could not find what you were looking for");
         await Expect(error).Not.ToContainTextAsync("404");
+        // A reference the user can quote; it is the trace.id of the call in the logs (docs/logging.md).
+        await Expect(Page.GetByTestId("error-reference")).ToHaveTextAsync(new Regex("^[0-9a-f]{32}$"));
         await Expect(Page.GetByText("Exception")).ToHaveCountAsync(0);
 
         // Client-side validation (same rules as the API).

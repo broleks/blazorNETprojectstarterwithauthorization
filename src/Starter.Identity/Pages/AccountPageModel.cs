@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Starter.Identity.Data;
 using Starter.Identity.Infrastructure;
 using Starter.Identity.Infrastructure.Email;
+using Starter.Observability;
 
 namespace Starter.Identity.Pages;
 
@@ -37,6 +38,12 @@ public abstract class AccountPageModel : PageModel
         var link = EmailLink("/Account/ConfirmEmail", new { userId = user.Id, code, returnUrl = ReturnUrl });
         await sender.SendConfirmationLinkAsync(user.Email!, user.DisplayName, link, HttpContext.RequestAborted);
     }
+
+    /// <summary>Writes a security event (category Security) - see docs/logging.md for the event names.</summary>
+    protected void LogSecurity(string action, EventOutcome outcome, string? userId = null, IReadOnlyDictionary<string, object?>? details = null) =>
+        HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("Starter.Identity.Security")
+            .LogActivity(LogCategories.Security, action, outcome, details, userId);
 
     protected static string EncodeToken(string token) =>
         Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(token));

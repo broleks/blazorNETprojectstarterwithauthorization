@@ -24,6 +24,12 @@
     <PackageVersion Include="OpenIddict.Validation.AspNetCore" Version="$(OpenIddictVersion)" />
     <PackageVersion Include="OpenIddict.Validation.SystemNetHttp" Version="$(OpenIddictVersion)" />
   </ItemGroup>
+  <ItemGroup Label="Logging">
+    <!-- Serilog 10.x matches .NET 10 (11.x targets .NET 11 packages). Elastic 9.x matches Elasticsearch/Kibana 9. -->
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageVersion Include="Elastic.Serilog.Sinks" Version="9.0.0" />
+  </ItemGroup>
   <ItemGroup Label="Email">
     <PackageVersion Include="MailKit" Version="4.18.2" />
   </ItemGroup>

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Components.Server.Circuits;
+using Starter.Observability;
 using Starter.Web.Components;
 using Starter.Web.Infrastructure;
 using Starter.Web.Infrastructure.Api;
@@ -13,6 +15,7 @@ if (args is ["--health-check", var healthUrl])
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddStarterLogging("web");
 builder.AddWebDatabase();
 builder.AddWebAuthentication();
 
@@ -37,6 +40,8 @@ builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AccountApi>();
 builder.Services.AddScoped<NotesApi>(); // example feature
 builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<FrontendActivity>();
+builder.Services.AddScoped<CircuitHandler, CircuitActivityHandler>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<WebDbContext>("database", tags: ["ready"])
@@ -69,6 +74,7 @@ app.UseHttpsRedirection();
 app.UseSecurityHeaders(identityUrl.GetLeftPart(UriPartial.Authority));
 
 app.UseAuthentication();
+app.UseUserLogScope();
 app.UseAuthorization();
 app.UseAntiforgery();
 

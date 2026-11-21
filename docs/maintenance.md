@@ -87,13 +87,14 @@ files close to the starter's version to make that easy.
 
 ## Update dependencies
 
-- All package versions are in `Directory.Packages.props`; restores are locked by `packages.lock.json`.
+- All package versions are in `Directory.Packages.props` (central package management, transitive pins included).
+  There are no `packages.lock.json` files: implicit SDK packages follow the installed SDK patch and would break locked restores.
 - Dependabot opens weekly grouped pull requests (NuGet, Docker base images, GitHub Actions).
 
 Manual update:
 
 1. Change versions in `Directory.Packages.props` (keep ASP.NET Core / EF Core on the same patch: `AspNetCoreVersion`).
-2. `dotnet restore Starter.slnx --force-evaluate` to refresh the lock files.
+2. `dotnet restore Starter.slnx`.
 3. Read release notes of OpenIddict and ASP.NET Core for security or breaking changes.
 4. `dotnet list Starter.slnx package --vulnerable --include-transitive`; pin fixed transitive versions in the
    *Security pins* group if needed.

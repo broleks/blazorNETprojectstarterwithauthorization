@@ -25,6 +25,8 @@ public sealed class ForgotPasswordModel(UserManager<ApplicationUser> userManager
         }
 
         var user = await userManager.FindByEmailAsync(Email);
+        LogSecurity("account.password_reset_request", user is { EmailConfirmed: true } ? EventOutcome.Success : EventOutcome.Unknown, user?.Id,
+            new Dictionary<string, object?> { ["Reason"] = user is null ? "unknown_email" : user.EmailConfirmed ? null : "email_not_confirmed" });
         if (user is { EmailConfirmed: true })
         {
             var code = EncodeToken(await userManager.GeneratePasswordResetTokenAsync(user));

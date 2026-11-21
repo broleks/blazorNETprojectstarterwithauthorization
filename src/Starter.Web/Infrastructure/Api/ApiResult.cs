@@ -18,13 +18,16 @@ public interface IApiResult
     ApiStatus Status { get; }
     bool Succeeded { get; }
     string Message { get; }
+
+    /// <summary>Trace id of the failed call, shown to the user so they can quote it; search for it as <c>trace.id</c>.</summary>
+    string? ReferenceId { get; }
 }
 
 /// <summary>
 /// Outcome of an API call, already translated into something the UI can show. Components never see HTTP
 /// details, tokens or exception messages - only a status and a user-friendly message.
 /// </summary>
-public sealed record ApiResult<T>(ApiStatus Status, T? Value = default, IReadOnlyDictionary<string, string[]>? Errors = null) : IApiResult
+public sealed record ApiResult<T>(ApiStatus Status, T? Value = default, IReadOnlyDictionary<string, string[]>? Errors = null, string? ReferenceId = null) : IApiResult
 {
     public bool Succeeded => Status == ApiStatus.Success;
 

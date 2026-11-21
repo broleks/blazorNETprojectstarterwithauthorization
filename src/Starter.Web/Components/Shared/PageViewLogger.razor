@@ -1,0 +1,23 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject FrontendActivity Frontend
+
+@* Logs every page view (category Frontend). The query string is left out: it may contain user input. *@
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        await LogPageViewAsync(Navigation.Uri);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _ = LogPageViewAsync(e.Location);
+
+    private Task LogPageViewAsync(string uri) =>
+        Frontend.LogAsync("ui.page_view", new Dictionary<string, object?>
+        {
+            ["Page"] = "/" + Navigation.ToBaseRelativePath(uri).Split('?', '#')[0],
+        });
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

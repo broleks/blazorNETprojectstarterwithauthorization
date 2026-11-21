@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Starter.Contracts;
+using Starter.Observability;
 using Starter.Web.Infrastructure.Sessions;
 
 namespace Starter.Web.Infrastructure.Authentication;
@@ -104,12 +105,19 @@ internal static class AuthenticationSetup
                     return Task.CompletedTask;
                 };
 
+                options.Events.OnTicketReceived = context =>
+                {
+                    SecurityLogger(context.HttpContext).LogActivity(LogCategories.Security, "auth.web_sign_in", EventOutcome.Success,
+                        userId: context.Principal?.FindFirst("sub")?.Value);
+                    return Task.CompletedTask;
+                };
+
                 options.Events.OnRemoteFailure = context =>
                 {
                     // Expired or tampered sign-in attempts, errors returned by the identity server, network problems.
                     // The user sees a friendly page; details stay in the log.
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Starter.Web.Authentication");
-                    logger.LogWarning(context.Failure, "Remote sign-in failed");
+                    SecurityLogger(context.HttpContext).LogActivity(LogCategories.Security, "auth.web_sign_in", EventOutcome.Failure,
+                        new Dictionary<string, object?> { ["Reason"] = context.Failure?.Message }, exception: context.Failure);
                     context.Response.Redirect("/authentication/error");
                     context.HandleResponse();
                     return Task.CompletedTask;
@@ -147,6 +155,9 @@ internal static class AuthenticationSetup
             if (context.User.FindFirst(ServerSideTicketStore.SessionKeyClaim)?.Value is { } sessionKey)
             {
                 properties.Items[IdTokenHintItem] = await tokens.GetIdTokenAsync(sessionKey, context.RequestAborted);
+                SecurityLogger(context).LogActivity(LogCategories.Security, "auth.sign_out", EventOutcome.Success,
+                    new Dictionary<string, object?> { [LogProperties.SessionId] = ActivityLogExtensions.HashForLogs(sessionKey) },
+                    context.User.FindFirst("sub")?.Value);
                 // Deletes the server-side session and revokes the refresh token right away.
                 await tokens.EndSessionAsync(sessionKey, context.RequestAborted);
             }
@@ -155,6 +166,9 @@ internal static class AuthenticationSetup
         })
         .DisableAntiforgery(); // validated explicitly above
     }
+
+    private static ILogger SecurityLogger(HttpContext context) =>
+        context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Starter.Web.Security");
 
     private static IResult Challenge(string? returnUrl, string? prompt)
     {

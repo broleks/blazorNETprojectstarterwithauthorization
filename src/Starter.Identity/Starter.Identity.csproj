@@ -18,7 +18,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Starter.Contracts\Starter.Contracts.csproj" />
+    <ProjectReference Include="..\Starter.Observability\Starter.Observability.csproj" />
     <ProjectReference Include="..\Starter.Ui\Starter.Ui.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Security event logging is used by most account pages. -->
+    <Using Include="Starter.Observability" />
   </ItemGroup>
 
   <ItemGroup>

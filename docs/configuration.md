@@ -47,6 +47,12 @@ environment variables (`Section__Key`) and, in Azure, App Service settings with 
 | `Authentication:ClientSecret` | Secret; must match `OpenIddict:Clients:starter-web:ClientSecret` |
 | `Api:BaseUrl` | API URL |
 
+## Logging (all three applications)
+
+Section `ActivityLogging` — destination (`File`, `Elasticsearch`, `Both`), categories (`Errors`, `Security`, `Api`,
+`Frontend`), retention, file path and Elasticsearch connection (`Url`, `ApiKey` is a secret, `Namespace`).
+Docker Compose reads `LOG_DESTINATION` and `LOG_RETENTION_DAYS` from `.env`. Details: [logging.md](logging.md).
+
 ## Behind a reverse proxy
 
 Set `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` (App Service does this for you when set in app settings) so the apps

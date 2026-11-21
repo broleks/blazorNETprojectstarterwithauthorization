@@ -26,6 +26,8 @@ id token used as access token, foreign notes (read/update/delete → 404, data u
 validation and size limits, paging limits, owner CRUD + archive/restore + paging, refresh rotation, revocation,
 password change and security stamp invalidation, deleted account, rate limiting (API and account forms),
 email links not shown on pages and built from the public URL, enumeration-safe registration, antiforgery,
+activity logging (API call and security events written with user, route, status and the client's trace id; validation
+messages without values; no passwords, tokens or email addresses in the log files; category and master switches),
 open redirect protection, PKCE requirement, unregistered redirect URI, Google button/challenge/cancel/forged state.
 
 ## End-to-end tests (Playwright)

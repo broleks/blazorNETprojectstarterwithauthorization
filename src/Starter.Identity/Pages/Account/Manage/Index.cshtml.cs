@@ -51,6 +51,7 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, SignInM
             return Page();
         }
 
+        LogSecurity("account.profile_update", EventOutcome.Success, user.Id);
         await signInManager.RefreshSignInAsync(user);
         StatusMessage = "Your profile has been updated. Return to the app to see the change.";
         return RedirectToPage(new { returnUrl = ReturnUrl });

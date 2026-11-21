@@ -110,6 +110,12 @@ Repeat for `api` and `web` (or `az acr build`). Then migrate (step 4) and redepl
 
 The starter is therefore *designed* for several instances but not declared ready until you have tested it.
 
+## Logs
+
+Set `ActivityLogging__Destination=Elasticsearch`, `ActivityLogging__Elasticsearch__Url`, `ActivityLogging__Elasticsearch__ApiKey`
+(Key Vault reference) and `ActivityLogging__Elasticsearch__Namespace=production` on the three App Services, and create
+the index template once ([logging.md](logging.md#production)). Local files inside App Service are not a durable store.
+
 ## Monitoring and health
 
 - `/health/live` (process) and `/health/ready` (database; for web also identity server and API). App Service health
