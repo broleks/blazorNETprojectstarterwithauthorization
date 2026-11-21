@@ -18,6 +18,7 @@ containers and tests are already in place.
 ## Contents
 
 - [Solution structure](#solution-structure)
+- [Working model](#working-model)
 - [Quick start](#quick-start)
 - [How sign-in and API calls work](#how-sign-in-and-api-calls-work)
 - [Where to find things](#where-to-find-things)
@@ -56,6 +57,21 @@ scripts/
 **Why a separate identity server?** It is the only component that sees passwords, talks to Google and
 issues tokens. The web app and a future mobile app are both ordinary OpenID Connect clients of it, and the
 API contains no UI and no cookies — it only validates tokens. See [architecture](docs/architecture.md).
+
+## Working model
+
+Clone the starter (or generate a renamed copy), then build your application in two places. Sign-in stays as it is.
+
+| Part | Project | In a new application |
+| --- | --- | --- |
+| Web front: pages, layout, calling the API | `Starter.Web` (`Components/**`, `Infrastructure/Api/*Api.cs`) | **You build here** |
+| Your API: business logic and data | `Starter.Api` (`Features/**`) + `Starter.Contracts` | **You build here** |
+| Sign-in service: accounts, tokens, account pages | `Starter.Identity` | **Unchanged** — configure only |
+| Sign-in plumbing in the web app and API | `Starter.Web/Infrastructure/Authentication`, `Sessions`, `ApiClient.cs`; `Starter.Api/Infrastructure/AuthenticationSetup.cs` | **Unchanged** |
+
+Changes to the stable parts (extra registration fields, roles, two-factor authentication) are deliberate decisions
+and usually belong in the starter first, so every application can take them over. Step-by-step checklist for a new
+application: [docs/maintenance.md](docs/maintenance.md#create-a-new-application-from-the-starter).
 
 ## Quick start
 

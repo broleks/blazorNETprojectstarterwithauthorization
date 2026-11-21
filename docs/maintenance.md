@@ -2,25 +2,70 @@
 
 ## Create a new application from the starter
 
-Install the starter as a `dotnet new` template (once, from a clone of this repository):
+### 1. Get a copy
+
+Either clone the repository and keep the `Starter` names, or generate a renamed copy with the `dotnet new` template
+(replaces `Starter` everywhere: namespaces, projects, solution, cookie names, database and image names; gives each
+project new user-secret ids). Install the template once, from a clone of this repository:
 
 ```bash
 dotnet new install .
 ```
 
-Create the application (replaces `Starter` with your name everywhere: namespaces, projects, solution, cookie
-names, database name, image names; gives each project new user-secret ids):
-
 ```bash
 dotnet new blazor-oidc-starter -n Acme -o ../Acme
 ```
 
-Then in the new folder: `git init`, `dotnet run scripts/setup-local.cs`, start one of the variants from the README,
-and replace the notes module with your own features (keep it until your first feature exists — it is the example the
-tests and docs refer to). Update `design/STYLE-PROMPT.md` and the README.
+Initialise git in the new folder and record the starter commit you started from (e.g. in the README) — you will need
+it to port later starter fixes.
 
-Alternative without the template engine: copy the repository (GitHub *Use this template*) and keep the `Starter`
-names.
+### 2. Run it unchanged
+
+```bash
+dotnet run scripts/setup-local.cs
+```
+
+```bash
+docker compose up -d --wait
+```
+
+Start Identity, Api and Web (README, variant 2), register an account, confirm it in Mailpit, sign in. Run
+`dotnet test --project tests/Starter.Api.Tests` once. Now you know the base works on your machine.
+
+### 3. Configure, don't modify, the sign-in service
+
+Per application you set only configuration of `Starter.Identity`:
+
+- application name shown on the account pages and in emails (`Email:FromName`, page texts if needed),
+- client registration: redirect URIs and secret (`OpenIddict:Clients`), done locally by the setup script,
+- Google credentials, if wanted ([google-sign-in.md](google-sign-in.md)),
+- production URLs, SMTP and certificates ([azure-deployment.md](azure-deployment.md)).
+
+Leave the code of the stable modules unchanged (listed in the README section *Working model* and in `CLAUDE.md`).
+
+### 4. Build your first feature next to the notes example
+
+Follow [extending.md](extending.md): contracts in `Starter.Contracts/<Feature>`, entity and endpoints in
+`Starter.Api/Features/<Feature>`, a migration, a typed client and pages in `Starter.Web`, an ownership test in
+`Starter.Api.Tests`. Keep the notes module until then — it is the working example to copy from.
+
+### 5. Remove the notes example
+
+When your own feature works, delete the example:
+
+| Where | What |
+| --- | --- |
+| `src/Starter.Api/Features/Notes/`, `Features/Dashboard/` | Endpoints and entity; remove their `Map...` calls in `Program.cs` and the `Notes` `DbSet` in `Infrastructure/AppDbContext.cs` |
+| `src/Starter.Api/Data/Migrations/` | Add a migration that drops the `Notes` table (`dotnet ef migrations add RemoveNotes ...`); do not delete existing migrations once a database has used them |
+| `src/Starter.Contracts/Notes/`, `Dashboard/` | Contracts |
+| `src/Starter.Web/Components/Pages/` | `Notes.razor`, `NoteEditor.razor`, `Archive.razor`, `Dashboard.razor` (replace with your home page at `/`) |
+| `src/Starter.Web/Components/Shared/` | `NoteList.razor`, `NotesPage.razor` |
+| `src/Starter.Web/Infrastructure/Api/NotesApi.cs` | Typed client of the example, and its registration in `Program.cs` (keep `AccountApi`) |
+| `src/Starter.Web/Components/Layout/NavMenu.razor` | Menu items |
+| `tests/Starter.Api.Tests/Notes/` | Notes tests (keep the security tests in `Security/` and `Identity/`; point the few that call `/api/notes` at your endpoints) |
+| `tests/Starter.E2E.Tests/Tests/NotesTests.cs` | Notes scenarios; replace `CreateNoteAsync` in `E2ETestBase` and adapt `MobileTests` and the cleanup SQL in `TestDataCleanup` |
+
+Build, run both test projects, and update `README.md` and `design/STYLE-PROMPT.md` for your application.
 
 ## Keep the link to the starter
 

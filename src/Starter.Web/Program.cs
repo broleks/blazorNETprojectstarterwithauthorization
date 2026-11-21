@@ -34,7 +34,8 @@ builder.Services.AddHttpClient(ApiClient.HttpClientName, client =>
 });
 builder.Services.AddHttpClient("health", client => client.Timeout = TimeSpan.FromSeconds(5));
 builder.Services.AddScoped<ApiClient>();
-builder.Services.AddScoped<NotesApi>();
+builder.Services.AddScoped<AccountApi>();
+builder.Services.AddScoped<NotesApi>(); // example feature
 builder.Services.AddScoped<ToastService>();
 
 builder.Services.AddHealthChecks()

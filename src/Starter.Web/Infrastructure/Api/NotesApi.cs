@@ -1,19 +1,16 @@
 using Starter.Contracts;
-using Starter.Contracts.Account;
 using Starter.Contracts.Dashboard;
 using Starter.Contracts.Notes;
 
 namespace Starter.Web.Infrastructure.Api;
 
 /// <summary>
+/// Example feature client (notes and dashboard). Remove it together with the notes example.
 /// Typed methods for the API endpoints used by the UI. To call a new endpoint add a method here (or a new
 /// class like this one per feature) - authentication and error handling are already done by <see cref="ApiClient"/>.
 /// </summary>
 public sealed class NotesApi(ApiClient api)
 {
-    public Task<ApiResult<MeResponse>> GetMeAsync(CancellationToken cancellationToken = default) =>
-        api.GetAsync<MeResponse>("api/me", cancellationToken);
-
     public Task<ApiResult<DashboardResponse>> GetDashboardAsync(CancellationToken cancellationToken = default) =>
         api.GetAsync<DashboardResponse>("api/dashboard", cancellationToken);
 
