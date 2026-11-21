@@ -15,7 +15,7 @@ RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
     dotnet publish src/Starter.Web/Starter.Web.csproj --configuration Release --no-restore --output /app /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 WORKDIR /app
 COPY --from=build /app .
 
