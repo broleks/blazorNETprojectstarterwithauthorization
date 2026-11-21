@@ -56,7 +56,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-test-results
           path: TestResults/integration
@@ -141,7 +141,7 @@ jobs:
       # Traces and screenshots of failed tests. They contain only synthetic data, but are still kept briefly.
       - name: Upload test results and traces
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-test-results
           path: TestResults
