@@ -30,7 +30,7 @@ builder.Services.AddScoped<IUserDataHandler, NotesUserData>();
 // Errors are described in the API log (title, validation messages) and the response carries a traceId the user can quote.
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = RequestLogging.CaptureProblemDetails);
 builder.Services.AddValidation();
-builder.Services.AddOpenApi();
+builder.AddApiDocumentation();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     // Unknown properties are an error rather than silently ignored. This makes attempts to send
@@ -73,10 +73,8 @@ app.UseAuthorization();
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false }).AllowAnonymous();
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") }).AllowAnonymous();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi().AllowAnonymous();
-}
+// OpenAPI document and the interactive reference at /scalar (only when OpenApi:Enabled, i.e. Development).
+app.MapApiDocumentation();
 
 // Every endpoint under /api requires a valid access token with the API scope (see AuthenticationSetup).
 // To add a feature: create Features/<Name>/<Name>Endpoints.cs and register it here.
