@@ -14,6 +14,7 @@ if (args is ["--health-check", var healthUrl])
 }
 
 var builder = WebApplication.CreateBuilder(args);
+builder.ValidateConfiguration("Starter.Api", ConfigurationRequirements.Check);
 
 // Requests are small JSON documents; anything larger is rejected before it reaches an endpoint.
 builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = 64 * 1024);

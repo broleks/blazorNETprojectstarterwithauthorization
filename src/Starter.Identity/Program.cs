@@ -14,6 +14,7 @@ if (args is ["--health-check", var healthUrl])
 }
 
 var builder = WebApplication.CreateBuilder(args);
+builder.ValidateConfiguration("Starter.Identity", ConfigurationRequirements.Check);
 
 builder.AddStarterLogging("identity");
 builder.AddAuthDatabase();
@@ -54,6 +55,15 @@ builder.Services.AddHostedService(services => services.GetRequiredService<Pendin
 builder.Services.AddScoped<AccountDeletionService>();
 builder.Services.AddScoped<PersonalDataExporter>();
 
+// Browser-based clients on another origin (the API reference page in development) exchange the authorization code
+// from JavaScript, which needs CORS on the identity server. Only origins listed in Cors:AllowedOrigins are allowed;
+// none are configured outside Development. The web app does not need it (it calls the token endpoint server-side).
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
+    .WithOrigins(corsOrigins)
+    .WithMethods(HttpMethods.Get, HttpMethods.Post)
+    .WithHeaders("Content-Type")));
+
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AuthDbContext>("database", tags: ["ready"]);
 
@@ -83,6 +93,7 @@ var googleEnabled = (await app.Services.GetRequiredService<IAuthenticationScheme
 app.UseSecurityHeaders(app.Services.GetRequiredService<PublicUrls>(), googleEnabled);
 
 app.UseRouting();
+app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseUserLogScope();

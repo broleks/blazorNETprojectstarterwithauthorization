@@ -62,6 +62,18 @@ The cookie names differ, and in production each app has its own host name.
 - **Containers** trust `.certs/trust` through `SSL_CERT_DIR=/https/trust:/etc/ssl/certs` (set in `compose.yaml`).
   Nothing in the application code disables certificate validation.
 
+## API reference (OpenAPI + Scalar)
+
+With the apps running from Visual Studio / `dotnet run`, open **https://localhost:7002/scalar/**:
+
+1. In *Authentication*, click **Authorize** and sign in with your account in the window that opens
+   (Authorization Code + PKCE at Starter.Identity; client `starter-api-docs`, registered only in Development).
+2. Pick an endpoint, **Test Request**, **Send** — the call uses your real access token, so you only see your own data.
+
+The raw document is at https://localhost:7002/openapi/v1.json (useful for generating clients, e.g. for a mobile app).
+The reference page is switched off outside Development (`OpenApi:Enabled`), including the Docker Compose variant.
+It runs fully locally: AI assistant, telemetry and external fonts of Scalar are disabled.
+
 ## OpenID Connect and Google addresses
 
 | Purpose | Value (both variants) |

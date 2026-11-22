@@ -4,6 +4,26 @@ Settings come from `appsettings.json`, `appsettings.{Environment}.json`, user se
 environment variables (`Section__Key`) and, in Azure, App Service settings with Key Vault references.
 **Secrets are never stored in `appsettings*.json`.**
 
+## Startup check
+
+Each application checks its configuration before it starts and stops with one message listing **every** problem:
+
+```
+Starter.Api cannot start - 2 configuration problems:
+ - ConnectionStrings:Default is missing (SQL Server connection for the app schema).
+ - Authentication:Issuer must be an absolute https URL.
+Locally run 'dotnet run scripts/setup-local.cs'. All settings: docs/configuration.md.
+```
+
+Messages name the setting, never its value. The requirements of each application are in one file:
+`src/Starter.<App>/Infrastructure/ConfigurationRequirements.cs` (helpers: `src/Starter.Observability/ConfigurationCheck.cs`).
+When you add a setting your code cannot work without, add a line there.
+
+What is checked: connection strings, URLs (absolute, https), client registrations (redirect URIs, secrets of the web
+and service clients), token certificates (file exists and opens with the password; required outside Development),
+SMTP settings (unencrypted SMTP refused in Production), Google (both values or none), initial administrators
+(email format), CORS origins, logging destination (Elasticsearch URL when used), numbers and durations.
+
 ## Starter.Identity
 
 | Key | Example | Secret | Notes |
@@ -31,6 +51,7 @@ environment variables (`Section__Key`) and, in Azure, App Service settings with 
 | `RateLimiting:AccountPostsPerMinute` | `20` | | Per client IP |
 | `RateLimiting:TokenRequestsPerMinute` | `600` | | Per client IP (the web server is one IP) |
 | `Database:MigrateOnStartup` | `true` | | Honoured in Development only |
+| `Cors:AllowedOrigins:N` | `https://localhost:7002` | | Origins allowed to call the token endpoint from a browser (Development: the API reference page). Empty elsewhere |
 
 ## Starter.Api
 
@@ -39,6 +60,8 @@ environment variables (`Section__Key`) and, in Azure, App Service settings with 
 | `ConnectionStrings:Default` / `Migrations` | Schema `app` |
 | `Authentication:Issuer` | Must equal the identity server's issuer exactly (including the trailing `/`) |
 | `RateLimiting:RequestsPerMinute` / `WritesPerMinute` | Per user |
+| `OpenApi:Enabled` | `true` in Development: serves `/openapi/v1.json` and the API reference at `/scalar` |
+| `OpenApi:PublicUrl` | Public URL of the API, used for the reference page's sign-in redirect (`<PublicUrl>scalar/`) |
 
 ## Starter.Web
 

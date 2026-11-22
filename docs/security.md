@@ -62,6 +62,14 @@ This page lists the protections built into the starter, where they live, and wha
 | Input | DataAnnotations validation (shared with the UI), length limits, 64 KB request body limit, page size ≤ 50 |
 | Rate limiting | 300 requests/min and 60 writes/min per user (configurable), 429 with `Retry-After` |
 
+### Development tools
+
+| Control | Implementation |
+| --- | --- |
+| API reference (`/scalar`) | Only with `OpenApi:Enabled` (Development). Signs in with a public client (`starter-api-docs`, PKCE) registered only in the Development configuration; Scalar's AI assistant, telemetry and external fonts are off |
+| CORS on the identity server | Only for origins in `Cors:AllowedOrigins` (Development: the API reference page); empty elsewhere |
+| Startup check | Incomplete or unsafe configuration (missing secrets, non-https URLs, plaintext SMTP in Production) stops the app with a list of problems, without printing values |
+
 ### Everywhere
 
 - HTTPS only (HSTS outside Development, `UseHttpsRedirection`); certificate validation is never disabled in code.

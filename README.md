@@ -133,6 +133,7 @@ In Development the apps apply their database migrations at startup.
 | https://localhost:7003 | The application (Starter.Web) |
 | https://localhost:7001 | Account pages / identity server (Starter.Identity) |
 | https://localhost:7002/health/ready | API health (API endpoints need a token) |
+| https://localhost:7002/scalar/ | API reference with sign-in (Visual Studio / `dotnet run` only) |
 | http://localhost:8025 | Mailpit — confirmation and password reset emails land here |
 | http://localhost:5601 | Kibana with the application logs (optional: `docker compose --profile logs up -d --wait`) |
 
@@ -190,6 +191,8 @@ sequenceDiagram
 | Account deletion, export, service client | `src/Starter.Identity/Infrastructure/Accounts/`, `src/Starter.Api/Features/UserData/` |
 | Administration | `src/Starter.Identity/Pages/Admin/`, `src/Starter.Api/Features/Admin/`, `src/Starter.Web/Components/Pages/Admin.razor` |
 | Logging setup, categories, event helpers | `src/Starter.Observability/` (guide: [docs/logging.md](docs/logging.md)) |
+| API reference (OpenAPI, Scalar) | `src/Starter.Api/Infrastructure/OpenApiSetup.cs` |
+| Startup configuration check | `src/Starter.<App>/Infrastructure/ConfigurationRequirements.cs` |
 | Theme | `src/Starter.Ui/wwwroot/theme.css`, `src/Starter.Web/wwwroot/css/app.css` |
 
 How to add a protected page, an API endpoint and a new entity: [docs/extending.md](docs/extending.md).
@@ -212,7 +215,7 @@ Reports, traces and options: [docs/testing.md](docs/testing.md).
 
 ## Status and limits
 
-The starter is verified locally in both variants (build, 80 integration tests, 18 Playwright tests, container
+The starter is verified locally in both variants (build, 83 integration tests, 18 Playwright tests, container
 images). The Azure template compiles but has not been deployed by the authors of this repository — treat
 [docs/azure-deployment.md](docs/azure-deployment.md) as a reviewed plan, not a tested release. Multi-instance
 operation is designed for (shared Data Protection keys and sessions in SQL) but not verified; see the scaling

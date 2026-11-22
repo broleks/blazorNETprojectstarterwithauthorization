@@ -14,7 +14,8 @@ internal static class UserDataEndpoints
     {
         var internalApi = app.MapGroup("/api/internal/users/{userId}")
             .RequireAuthorization(AuthenticationSetup.AccountsServicePolicy)
-            .WithTags("Internal");
+            .WithTags("Internal")
+            .ExcludeFromDescription(); // service-to-service only; not part of the public API reference
 
         internalApi.MapGet("/export", Export);
         internalApi.MapDelete("/", Delete);

@@ -14,6 +14,7 @@ if (args is ["--health-check", var healthUrl])
 }
 
 var builder = WebApplication.CreateBuilder(args);
+builder.ValidateConfiguration("Starter.Web", ConfigurationRequirements.Check);
 
 builder.AddStarterLogging("web");
 builder.AddWebDatabase();

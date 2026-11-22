@@ -21,7 +21,7 @@ dotnet test --project tests/Starter.Api.Tests
 - Negative cases the identity server never produces (expired token, wrong audience/issuer, missing scope, unknown
   key) use hand-minted JWTs, with a positive control that a correctly minted token is accepted.
 
-Covered: data export and account deletion (incl. API data removal and the GDPR handler coverage check), the service
+Covered: the startup configuration check (all problems reported at once, no values in the message), data export and account deletion (incl. API data removal and the GDPR handler coverage check), the service
 client and internal endpoints, the Admin role (API, admin pages, role revocation, lock/delete, initial administrators),
 no/invalid/tampered/expired tokens, wrong audience or issuer, unknown signing key, missing scope (403),
 id token used as access token, foreign notes (read/update/delete → 404, data unchanged), owner injection (400),

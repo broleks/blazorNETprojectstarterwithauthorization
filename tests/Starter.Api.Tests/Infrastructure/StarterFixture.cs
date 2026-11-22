@@ -89,6 +89,7 @@ public sealed class StarterFixture : IAsyncLifetime
         ["OpenIddict:Clients:starter-identity-service:Kind"] = "Service",
         ["OpenIddict:Clients:starter-identity-service:ClientSecret"] = ServiceClientSecret,
         ["Api:BaseUrl"] = ApiUrl,
+        ["Email:Host"] = "localhost", // required by the startup check; the tests replace the email sender
         // Every test signs in through the login form; the per-IP limit is tested separately.
         ["RateLimiting:AccountPostsPerMinute"] = "10000",
     };

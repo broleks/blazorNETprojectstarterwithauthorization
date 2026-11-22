@@ -46,6 +46,7 @@ internal static class OpenApiSetup
                         {
                             ["openid"] = "Sign in",
                             ["profile"] = "Display name in the token",
+                            ["email"] = "Email address in the token",
                             [ApiConstants.Scope] = "Call the Starter API",
                         },
                     },
@@ -70,13 +71,20 @@ internal static class OpenApiSetup
         app.MapOpenApi().AllowAnonymous();
         app.MapScalarApiReference(options => options
                 .WithTitle("Starter API")
+                // Keep the reference page local: no AI assistant, telemetry, MCP, external fonts or vendor promotions.
+                .DisableAgent()
+                .DisableTelemetry()
+                .DisableMcp()
+                .DisableDefaultFonts()
+                .HideDeveloperTools()
+                .HideClientButton()
                 .AddPreferredSecuritySchemes(SecurityScheme)
                 .AddAuthorizationCodeFlow(SecurityScheme, flow => flow
                     .WithClientId(DocsClientId)
                     .WithPkce(Pkce.Sha256)
                     // Must match the redirect URI registered for the docs client in Starter.Identity.
                     .WithRedirectUri(new Uri(new Uri(app.Configuration["OpenApi:PublicUrl"] ?? "https://localhost:7002/"), "scalar/").ToString())
-                    .WithSelectedScopes(["openid", "profile", ApiConstants.Scope])))
+                    .WithSelectedScopes(["openid", "profile", "email", ApiConstants.Scope])))
             .AllowAnonymous();
     }
 }
